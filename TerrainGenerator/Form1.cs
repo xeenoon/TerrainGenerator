@@ -5,10 +5,8 @@ namespace TerrainGenerator
 {
     public partial class Form1 : Form
     {
-        private const float OasisLevel    = 0.10f;
-        private const float GrassLevel    = 0.45f;
-        private const float DesertLevel   = 0.60f;
-        private const float MountainLevel = 1f;
+        public Dictionary<float, Color> colors = new Dictionary<float, Color>() { { 0.3f, Color.FromArgb(2, 60, 100) }, { 0.35f, Color.FromArgb(197, 151, 86) }, { 0.55f, Color.FromArgb(34, 139, 34) }, { 0.7f, Color.FromArgb(85,85,85) }, { 1f, Color.FromArgb(223, 227, 220) } };
+
         Bitmap result;
         public Form1()
         {
@@ -16,20 +14,19 @@ namespace TerrainGenerator
         }
         int size = 1;
         int zoom = 1;
-
-        int oasispixels = 0;
-        int grasspixels = 0;
-        int desertpixels = 0;
-        int mountainpixels = 0;
-
+        float blend = 0;
         private void RefreshTerrain()
         {
+            List<float> total = new List<float>();
+
             result = new Bitmap(Width*size, Height*size);
             var perlin = PerlinNoise.GeneratePerlinNoise(Width*size, Height*size, zoom);
 
             var max = perlin.Select(p => p.Max()).Max();
             var min = perlin.Select(p => p.Min()).Min();
             var scalar = max - min;
+
+            var ordered_colors = colors.OrderBy(c => c.Key).Select(c=>c.Key).ToList();
 
             using (var bmp = new BMP(result))
             {
@@ -38,49 +35,60 @@ namespace TerrainGenerator
                     for (int y = 0; y < Height*size; ++y)
                     {
                         float adjustment = perlin[x][y] * (1/(max-min));
-                        Color oasis = Color.FromArgb(2, 60, 70);
-                        Color grass = Color.FromArgb(34, 139, 34);
-                        Color desert = Color.FromArgb(197, 151, 86);
-                        Color mountain = Color.FromArgb(130, 78, 38);
+                        total.Add(adjustment);
 
-                        if (adjustment < OasisLevel)
+                        float lastheight = 0;
+                        int idx = 0;
+                        foreach (var color in colors)
                         {
-                            bmp.SetPixel(x, y, ChangeColorBrightness(oasis, (adjustment - 0.2f)/1.1f));
-                            ++oasispixels;
-                        }
-                        else if (adjustment < GrassLevel)
-                        {
-                            bmp.SetPixel(x, y, ChangeColorBrightness(grass, adjustment));
-                            ++grasspixels;
-                        }
-                        else if (adjustment < DesertLevel)
-                        {
-                            Color color;
-                            if (adjustment < 0.2f) //Scale towards mountains
+                            if (adjustment > lastheight && adjustment < color.Key)
                             {
-                                color = desert;
-                                //color = Blend(desert, mountain, (1 - (adjustment - 0.15f)) / 10);
+                                var currentcolor = color.Value;
+                                currentcolor = ChangeColorBrightness(color.Value, adjustment - lastheight);
+
+                                //Blend stuff to the lower "1/blend" of the color for the previous one
+
+                                //Like this, if the lower color starts at 0.1, and thie color is from 0.1,0.9 with a blend of (1/4)
+                                //0.1 18% blended towards lower color
+                                //0.2 9% blurred towards lower color
+                                //0.3 no blur
+                                //0.4 no blur
+                                //...
+
+
+                                if (idx != 0)
+                                {
+                                    float below_space = color.Key - lastheight;
+
+                                    if (adjustment < (lastheight + below_space/(1/blend)))
+                                    {
+                                        //We are in the lower quartile, so adjust the color towards the lower color
+                                        var lowercolor = colors[ordered_colors[idx-1]];
+
+                                        //The closer we are to the lower color, the more we should blend
+                                        float amount = (1/blend)*(((below_space / (1/blend)) + lastheight) - adjustment);
+                                        currentcolor = Blend(currentcolor, lowercolor, amount);
+                                    }
+                                }
+
+                                bmp.SetPixel(x, y, currentcolor);
                             }
-                            else //Scale towards grass
-                            {
-                                color = desert;
-                                color = Blend(desert, grass, (1 - (adjustment - 0.45f)) / 2);
-                            }
-                            bmp.SetPixel(x, y, ChangeColorBrightness(color, adjustment));
-                            ++desertpixels;
-                        }
-                        else if(adjustment < MountainLevel)
-                        {
-                            var colour = Blend(mountain, desert, (1 - (adjustment - 0.05f)) / 2);
-                            bmp.SetPixel(x, y, ChangeColorBrightness(colour, adjustment));
-                            ++mountainpixels;
+                            lastheight = color.Key;
+                            ++idx;
                         }
                     }
                 }
             }
 
             //result = Blur(result, 5);
-            //MessageBox.Show(string.Format("{4} pixels:  {0}\n{5} pixels:  {1}\n{6} pixels: {2}\n{7} pixels: {3}", oasispixels, grasspixels, desertpixels, mountainpixels, OasisLevel.ToString()));
+      //     string _result = "";
+      //     for (float i = 0; i < 1f; i+=0.001f)
+      //     {
+      //         _result += total.Count(n=>n<i && n > i-0.001).ToString() + ",";
+      //     }
+
+            //string strresult = string.Join(",", total.OrderBy(i=>i));
+            //File.WriteAllText(@"C:\Users\ccw10\Downloads\log.csv", _result);
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
@@ -97,6 +105,10 @@ namespace TerrainGenerator
 
         public static Color Blend(Color color, Color backColor, double amount)
         {
+            if (amount <= 0)
+            {
+
+            }
             byte r = (byte)(color.R * amount + backColor.R * (1 - amount));
             byte g = (byte)(color.G * amount + backColor.G * (1 - amount));
             byte b = (byte)(color.B * amount + backColor.B * (1 - amount));
@@ -208,6 +220,7 @@ namespace TerrainGenerator
         {
             size = int.Parse(textBox2.Text);
             zoom = int.Parse(textBox1.Text);
+            blend = float.Parse(textBox3.Text);
             RefreshTerrain();
             Invalidate();
         }
