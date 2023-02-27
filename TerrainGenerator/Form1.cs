@@ -7,6 +7,8 @@ namespace TerrainGenerator
     {
         public Dictionary<float, Color> colors = new Dictionary<float, Color>() { { 0.3f, Color.FromArgb(2, 60, 100) }, { 0.35f, Color.FromArgb(197, 151, 86) }, { 0.55f, Color.FromArgb(34, 139, 34) }, { 0.7f, Color.FromArgb(85,85,85) }, { 1f, Color.FromArgb(223, 227, 220) } };
 
+        BMP snow = new(Properties.Resources.snow.Clone(new Rectangle(0,0,Properties.Resources.snow.Width, Properties.Resources.snow.Height), PixelFormat.Format32bppArgb));
+
         Bitmap result;
         public Form1()
         {
@@ -44,7 +46,24 @@ namespace TerrainGenerator
                             if (adjustment > lastheight && adjustment < color.Key)
                             {
                                 var currentcolor = color.Value;
-                                currentcolor = ChangeColorBrightness(color.Value, adjustment - lastheight);
+
+                                if (color.Value == Color.FromArgb(223, 227, 220))
+                                {
+                                    //Doing snow
+                                    var adjusted_x = x;
+                                    var adjusted_y = y;
+                                    while (adjusted_x >= snow.Width)
+                                    {
+                                        adjusted_x -= snow.Width;
+                                    }
+                                    while (adjusted_y >= snow.Height)
+                                    {
+                                        adjusted_y -= snow.Height;
+                                    }
+                                    currentcolor = snow.GetPixel(adjusted_x, adjusted_y);
+                                }
+
+                                currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
 
                                 //Blend stuff to the lower "1/blend" of the color for the previous one
 
@@ -66,7 +85,7 @@ namespace TerrainGenerator
                                         var lowercolor = colors[ordered_colors[idx-1]];
 
                                         //The closer we are to the lower color, the more we should blend
-                                        float amount = (1/blend) * (((below_space / (1/blend)) + lastheight) - adjustment);
+                                        float amount = 8 * (((below_space / (1/blend)) + lastheight) - adjustment);
                                         currentcolor = Blend(currentcolor, lowercolor, amount);
                                     }
                                 }
