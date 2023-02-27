@@ -5,14 +5,23 @@ namespace TerrainGenerator
 {
     public partial class Form1 : Form
     {
-        public Dictionary<float, Color> colors = new Dictionary<float, Color>() { { 0.3f, Color.FromArgb(2, 60, 100) }, { 0.35f, Color.FromArgb(197, 151, 86) }, { 0.55f, Color.FromArgb(34, 139, 34) }, { 0.7f, Color.FromArgb(85,85,85) }, { 1f, Color.FromArgb(223, 227, 220) } };
+        Bitmap snow = Properties.Resources.snow;
+        Bitmap rock = Properties.Resources.rock;
+        Bitmap grass = Properties.Resources.grass;
+        Bitmap sand = Properties.Resources.sand;
+        Bitmap water = Properties.Resources.water;
 
-        BMP snow = new(Properties.Resources.snow.Clone(new Rectangle(0,0,Properties.Resources.snow.Width, Properties.Resources.snow.Height), PixelFormat.Format32bppArgb));
-
+        Dictionary<float, BMP> colors = new Dictionary<float, BMP>();
         Bitmap result;
         public Form1()
         {
             InitializeComponent();
+
+            colors.Add(0.3f,  new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb)));
+            colors.Add(0.35f, new BMP(sand .Clone(new Rectangle(0, 0, sand.Width, sand.Height), PixelFormat.Format32bppArgb)));
+            colors.Add(0.55f, new BMP(grass.Clone(new Rectangle(0, 0, grass.Width, grass.Height), PixelFormat.Format32bppArgb)));
+            colors.Add(0.7f , new BMP(rock .Clone(new Rectangle(0, 0, rock.Width, rock.Height), PixelFormat.Format32bppArgb)));
+            colors.Add(1f   , new BMP(snow .Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb)));
         }
         int size = 1;
         int zoom = 1;
@@ -21,22 +30,22 @@ namespace TerrainGenerator
         {
             List<float> total = new List<float>();
 
-            result = new Bitmap(Width*size, Height*size);
-            var perlin = PerlinNoise.GeneratePerlinNoise(Width*size, Height*size, zoom);
+            result = new Bitmap(Width * size, Height * size);
+            var perlin = PerlinNoise.GeneratePerlinNoise(Width * size, Height * size, zoom);
 
             var max = perlin.Select(p => p.Max()).Max();
             var min = perlin.Select(p => p.Min()).Min();
             var scalar = max - min;
 
-            var ordered_colors = colors.OrderBy(c => c.Key).Select(c=>c.Key).ToList();
+            var ordered_colors = colors.OrderBy(c => c.Key).Select(c => c.Key).ToList();
 
             using (var bmp = new BMP(result))
             {
-                for (int x = 0; x < Width*size; ++x)
+                for (int x = 0; x < Width * size; ++x)
                 {
-                    for (int y = 0; y < Height*size; ++y)
+                    for (int y = 0; y < Height * size; ++y)
                     {
-                        float adjustment = perlin[x][y] * (1/(max-min));
+                        float adjustment = perlin[x][y] * (1 / (max - min));
                         total.Add(adjustment);
 
                         float lastheight = 0;
@@ -45,23 +54,8 @@ namespace TerrainGenerator
                         {
                             if (adjustment > lastheight && adjustment < color.Key)
                             {
-                                var currentcolor = color.Value;
-
-                                if (color.Value == Color.FromArgb(223, 227, 220))
-                                {
-                                    //Doing snow
-                                    var adjusted_x = x;
-                                    var adjusted_y = y;
-                                    while (adjusted_x >= snow.Width)
-                                    {
-                                        adjusted_x -= snow.Width;
-                                    }
-                                    while (adjusted_y >= snow.Height)
-                                    {
-                                        adjusted_y -= snow.Height;
-                                    }
-                                    currentcolor = snow.GetPixel(adjusted_x, adjusted_y);
-                                }
+                                //Sample color texture
+                                Color currentcolor = SampleColor(x, y, color.Value);
 
                                 currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
 
@@ -79,14 +73,14 @@ namespace TerrainGenerator
                                 {
                                     float below_space = color.Key - lastheight;
 
-                                    if (adjustment < (lastheight + below_space/(1/blend)))
+                                    if (adjustment < (lastheight + below_space / (1 / blend)))
                                     {
                                         //We are in the lower quartile, so adjust the color towards the lower color
-                                        var lowercolor = colors[ordered_colors[idx-1]];
+                                        var lowercolor = colors[ordered_colors[idx - 1]];
 
                                         //The closer we are to the lower color, the more we should blend
-                                        float amount = 8 * (((below_space / (1/blend)) + lastheight) - adjustment);
-                                        currentcolor = Blend(currentcolor, lowercolor, amount);
+                                        float amount = 8 * (((below_space / (1 / blend)) + lastheight) - adjustment);
+                                        currentcolor = Blend(currentcolor, SampleColor(x,y,lowercolor), amount);
                                     }
                                 }
 
@@ -98,6 +92,21 @@ namespace TerrainGenerator
                     }
                 }
             }
+        }
+
+        private Color SampleColor(int x, int y, BMP bmp)
+        {
+            var adjusted_x = x;
+            var adjusted_y = y;
+            while (adjusted_x >= bmp.Width)
+            {
+                adjusted_x -= bmp.Width;
+            }
+            while (adjusted_y >= bmp.Height)
+            {
+                adjusted_y -= bmp.Height;
+            }
+            return bmp.GetPixel(adjusted_x, adjusted_y);
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
