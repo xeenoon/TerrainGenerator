@@ -66,7 +66,7 @@ namespace TerrainGenerator
                                         var lowercolor = colors[ordered_colors[idx-1]];
 
                                         //The closer we are to the lower color, the more we should blend
-                                        float amount = (1/blend)*(((below_space / (1/blend)) + lastheight) - adjustment);
+                                        float amount = (1/blend) * (((below_space / (1/blend)) + lastheight) - adjustment);
                                         currentcolor = Blend(currentcolor, lowercolor, amount);
                                     }
                                 }
@@ -79,16 +79,6 @@ namespace TerrainGenerator
                     }
                 }
             }
-
-            //result = Blur(result, 5);
-      //     string _result = "";
-      //     for (float i = 0; i < 1f; i+=0.001f)
-      //     {
-      //         _result += total.Count(n=>n<i && n > i-0.001).ToString() + ",";
-      //     }
-
-            //string strresult = string.Join(",", total.OrderBy(i=>i));
-            //File.WriteAllText(@"C:\Users\ccw10\Downloads\log.csv", _result);
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
@@ -109,10 +99,12 @@ namespace TerrainGenerator
             {
 
             }
-            byte r = (byte)(color.R * amount + backColor.R * (1 - amount));
-            byte g = (byte)(color.G * amount + backColor.G * (1 - amount));
-            byte b = (byte)(color.B * amount + backColor.B * (1 - amount));
-            return Color.FromArgb(r, g, b);
+
+            byte red   = (byte)(((color.R * (1 - amount)) + (backColor.R * amount)));
+            byte green = (byte)(((color.G * (1 - amount)) + (backColor.G * amount)));
+            byte blue  = (byte)(((color.B * (1 - amount)) + (backColor.B * amount)));
+
+            return Color.FromArgb(red, green, blue);
         }
         public static Color ChangeColorBrightness(Color color, float correctionFactor)
         {
