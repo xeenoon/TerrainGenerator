@@ -9,9 +9,10 @@ namespace TerrainGenerator
 {
     public enum BiomeType
     {
+        Forest,
         Desert,
-        Grassland,
-        Lake,
+        Tundra,
+        Wasteland,
     }
     internal class Map
     {
@@ -52,10 +53,13 @@ namespace TerrainGenerator
         public BiomeType biomeType;
         public Point point;
 
-        public Biome(BiomeType biomeType, Point point)
+        public Dictionary<float, BMP> colors = new Dictionary<float, BMP>();
+
+        public Biome(BiomeType biomeType, Point point, Dictionary<float, BMP> colors)
         {
             this.biomeType = biomeType;
             this.point = point;
+            this.colors = colors;
         }
     }
 }

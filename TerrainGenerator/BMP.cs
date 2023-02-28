@@ -42,7 +42,7 @@ using System.Drawing.Imaging;
 /// project settings.
 /// 
 /// </summary>
-unsafe class BMP : IDisposable
+public unsafe class BMP : IDisposable
 {
     // A reference to the bitmap to be wrapped
     public Bitmap wrappedBitmap;
