@@ -247,11 +247,11 @@ namespace TerrainGenerator
             }
             else
             {
-                colors.Add(0.3f , new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb)));
+                colors.Add(0.3f, new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb)));
                 colors.Add(0.35f, new BMP(sand.Clone(new Rectangle(0, 0, sand.Width, sand.Height), PixelFormat.Format32bppArgb)));
                 colors.Add(0.55f, new BMP(grass.Clone(new Rectangle(0, 0, grass.Width, grass.Height), PixelFormat.Format32bppArgb)));
-                colors.Add(0.7f , new BMP(rock.Clone(new Rectangle(0, 0, rock.Width, rock.Height), PixelFormat.Format32bppArgb)));
-                colors.Add(1f   , new BMP(snow.Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb)));
+                colors.Add(0.7f, new BMP(rock.Clone(new Rectangle(0, 0, rock.Width, rock.Height), PixelFormat.Format32bppArgb)));
+                colors.Add(1f, new BMP(snow.Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb)));
             }
 
             RefreshTerrain();

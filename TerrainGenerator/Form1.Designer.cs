@@ -112,6 +112,7 @@
             // 
             // button2
             // 
+            button2.Anchor = AnchorStyles.Bottom | AnchorStyles.Right;
             button2.Location = new Point(708, 837);
             button2.Name = "button2";
             button2.Size = new Size(75, 23);
@@ -122,6 +123,7 @@
             // 
             // panel1
             // 
+            panel1.Anchor = AnchorStyles.Top | AnchorStyles.Right;
             panel1.Controls.Add(button4);
             panel1.Controls.Add(label5);
             panel1.Location = new Point(566, 12);
