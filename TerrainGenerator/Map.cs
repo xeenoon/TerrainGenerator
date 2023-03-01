@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing.Imaging;
 using System.Linq;
 using System.Security.Permissions;
 using System.Text;
 using System.Threading.Tasks;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
+using System.Windows.Media.Media3D;
 
 namespace TerrainGenerator
 {
@@ -53,13 +56,64 @@ namespace TerrainGenerator
         public BiomeType biomeType;
         public Point point;
 
-        public Dictionary<float, BMP> colors = new Dictionary<float, BMP>();
+        private List<BiomeLayerData> colors = new List<BiomeLayerData>();
 
         public Biome(BiomeType biomeType, Point point, Dictionary<float, BMP> colors)
         {
             this.biomeType = biomeType;
             this.point = point;
-            this.colors = colors;
+
+            foreach (var c in colors)
+            {
+                this.colors.Add(new BiomeLayerData(c.Key, c.Value));
+            }
+        }
+
+        public void Write(string filepath)
+        {
+            //Will put images in a folder named with their coresponding upperbound values
+            string folderpath = Path.Combine(filepath, biomeType.ToString());
+            if (!Directory.Exists(folderpath)) //If the folder doesn't exist, create it
+            {
+                Directory.CreateDirectory(folderpath);
+            }
+            foreach (var color in colors)
+            {
+                string formattedbounds = color.upperbound.ToString().Replace(".","_"); //Use underscores to avoid file extension mishaps
+                color.bitmap.wrappedBitmap.Save(Path.Combine(folderpath,(formattedbounds + ".png")), ImageFormat.Png);
+            }
+        }
+        private Biome(){}
+        public static Biome FromFolder(string folderpath)
+        {
+            Biome result = new Biome();
+            try
+            {
+                result.biomeType = Enum.Parse<BiomeType>(folderpath.Split("\\").Where(s => s != "").Last());
+            }
+            catch
+            {
+                MessageBox.Show("Invalid folder name");
+                return null;
+            }
+
+            foreach (var file in Directory.EnumerateFiles(folderpath))
+            {
+                var upperbound = float.Parse(file.Split(@"\\").Last().Split(".")[0]);
+                result.colors.Add(new BiomeLayerData(upperbound, new BMP(new Bitmap(Image.FromFile(file)))));
+            }
+            return result;
+        }
+    }
+    public class BiomeLayerData
+    {
+        public float upperbound;
+        public BMP bitmap;
+
+        public BiomeLayerData(float upperbound, BMP bitmap)
+        {
+            this.upperbound = upperbound;
+            this.bitmap = bitmap;
         }
     }
 }
