@@ -376,7 +376,7 @@ namespace TerrainGenerator
                 if (result != DialogResult.Cancel)
                 {
                     var filetype = dialog.FileName.Split(".")[1];
-                    if (filetype != "jpg" && filetype != "png" && filetype != "jfif")
+                    if (filetype != "jpg" && filetype != "png" && filetype != "jfif" && filetype != "jpeg")
                     {
                         MessageBox.Show("Change filetype to .jpg");
                         return;
