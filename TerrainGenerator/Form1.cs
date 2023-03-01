@@ -329,7 +329,7 @@ namespace TerrainGenerator
                 upperbound_label.Location = new Point(3, y_pos + 3);
                 upperbound_label.AutoSize = true;
 
-                upperbound_textbox.Size = new Size(100, 23);
+                upperbound_textbox.Size = new Size(30, 23);
                 upperbound_textbox.Location = new Point(86, y_pos);
 
                 imagesize_textbox.Size = new Size(70, 23);
@@ -337,7 +337,7 @@ namespace TerrainGenerator
 
                 uploadImageButton.Size = new Size(95, 23);
                 uploadImageButton.Location = new Point(192, y_pos);
-                uploadImageButton.Text = "Upload image";
+                uploadImageButton.Text = image == null ? "Upload image" : uploadImageButton.Text;
 
                 deleteButton.Size = new Size(19, 23);
                 deleteButton.Location = new Point(289, y_pos);
