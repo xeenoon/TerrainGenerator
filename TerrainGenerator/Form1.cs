@@ -13,20 +13,25 @@ namespace TerrainGenerator
         Bitmap sand = Properties.Resources.sand;
         Bitmap water = Properties.Resources.water;
 
-        List<BiomeLayerData> colors = new List<BiomeLayerData>();
+        Biome currentBiome;
+
         Bitmap result;
         Biome defaultBiome;
         public Form1()
         {
             InitializeComponent();
-           
-            colors.Add(new BiomeLayerData( 0.3f, new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb))));
-            colors.Add(new BiomeLayerData(0.35f, new BMP(sand.Clone(new Rectangle(0, 0, sand.Width, sand.Height), PixelFormat.Format32bppArgb))));
-            colors.Add(new BiomeLayerData(0.55f, new BMP(grass.Clone(new Rectangle(0, 0, grass.Width, grass.Height), PixelFormat.Format32bppArgb))));
-            colors.Add(new BiomeLayerData(0.7f, new BMP(rock.Clone(new Rectangle(0, 0, rock.Width, rock.Height), PixelFormat.Format32bppArgb))));
-            colors.Add(new BiomeLayerData(1f, new BMP(snow.Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb))));
 
-            defaultBiome = new Biome(BiomeType.Forest, new Point(0,0),colors);
+            List<BiomeLayerData> colors = new()
+            {
+                new BiomeLayerData(0.3f, new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(0.35f, new BMP(sand.Clone(new Rectangle(0, 0, sand.Width, sand.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(0.55f, new BMP(grass.Clone(new Rectangle(0, 0, grass.Width, grass.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(0.7f, new BMP(rock.Clone(new Rectangle(0, 0, rock.Width, rock.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(1f, new BMP(snow.Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb)))
+            };
+
+            defaultBiome = new Biome(BiomeType.Forest, new Point(0, 0), colors);
+            currentBiome = new Biome(BiomeType.Forest, new Point(0, 0), colors);
         }
         int size = 1;
         int zoom = 1;
@@ -53,7 +58,7 @@ namespace TerrainGenerator
 
                         float lastheight = 0;
                         int idx = 0;
-                        foreach (var color in colors)
+                        foreach (var color in currentBiome.colors)
                         {
                             if (adjustment > lastheight && adjustment < color.upperbound)
                             {
@@ -79,7 +84,7 @@ namespace TerrainGenerator
                                     if (adjustment < (lastheight + below_space / (1 / blend)))
                                     {
                                         //We are in the lower quartile, so adjust the color towards the lower color
-                                        var lowercolor = colors[idx - 1].bitmap;
+                                        var lowercolor = currentBiome.colors[idx - 1].bitmap;
 
                                         //The closer we are to the lower color, the more we should blend
                                         float amount = 8 * (((below_space / (1 / blend)) + lastheight) - adjustment);
@@ -244,19 +249,20 @@ namespace TerrainGenerator
             size = int.Parse(textBox2.Text);
             zoom = int.Parse(textBox1.Text);
             blend = float.Parse(textBox3.Text);
-            colors.Clear();
+
+            currentBiome.colors.Clear();
             if (panel1.Visible)
             {
                 foreach (var layer in layerChoosers)
                 {
                     string[] points = layer.imagesize_textbox.Text.Split(",");
                     var newsize = new Bitmap(layer.image, new Size(int.Parse(points[0]), int.Parse(points[1])));
-                    colors.Add(new BiomeLayerData(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0,0,newsize.Width, newsize.Height), PixelFormat.Format32bppArgb))));
+                    currentBiome.colors.Add(new BiomeLayerData(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0, 0, newsize.Width, newsize.Height), PixelFormat.Format32bppArgb))));
                 }
             }
             else
             {
-                colors = defaultBiome.colors.Copy();
+                currentBiome.colors = defaultBiome.colors.Copy();
             }
 
             RefreshTerrain();
@@ -392,6 +398,15 @@ namespace TerrainGenerator
                 panel.Controls.Add(imagesize_textbox);
                 panel.Controls.Add(uploadImageButton);
                 panel.Controls.Add(deleteButton);
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            if (dialog.ShowDialog() != DialogResult.Cancel)
+            {
+                
             }
         }
     }
