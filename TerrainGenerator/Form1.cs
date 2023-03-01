@@ -2,6 +2,7 @@ using System.ComponentModel.Design.Serialization;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace TerrainGenerator
 {
@@ -13,11 +14,25 @@ namespace TerrainGenerator
         Bitmap sand = Properties.Resources.sand;
         Bitmap water = Properties.Resources.water;
 
-        Dictionary<float, BMP> colors = new Dictionary<float, BMP>();
+        Biome currentBiome;
+
         Bitmap result;
+        Biome defaultBiome;
         public Form1()
         {
             InitializeComponent();
+
+            List<BiomeLayerData> colors = new()
+            {
+                new BiomeLayerData(0.3f, new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(0.35f, new BMP(sand.Clone(new Rectangle(0, 0, sand.Width, sand.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(0.55f, new BMP(grass.Clone(new Rectangle(0, 0, grass.Width, grass.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(0.7f, new BMP(rock.Clone(new Rectangle(0, 0, rock.Width, rock.Height), PixelFormat.Format32bppArgb))),
+                new BiomeLayerData(1f, new BMP(snow.Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb)))
+            };
+
+            defaultBiome = new Biome("Forest", new Point(0, 0), colors);
+            currentBiome = new Biome("Forest", new Point(0, 0), colors);
         }
         int size = 1;
         int zoom = 1;
@@ -33,8 +48,6 @@ namespace TerrainGenerator
             var min = perlin.Select(p => p.Min()).Min();
             var scalar = max - min;
 
-            var ordered_colors = colors.OrderBy(c => c.Key).Select(c => c.Key).ToList();
-
             using (var bmp = new BMP(result))
             {
                 for (int x = 0; x < Width * size; ++x)
@@ -46,12 +59,12 @@ namespace TerrainGenerator
 
                         float lastheight = 0;
                         int idx = 0;
-                        foreach (var color in colors)
+                        foreach (var color in currentBiome.colors)
                         {
-                            if (adjustment > lastheight && adjustment < color.Key)
+                            if (adjustment > lastheight && adjustment < color.upperbound)
                             {
                                 //Sample color texture
-                                Color currentcolor = SampleColor(x, y, color.Value);
+                                Color currentcolor = SampleColor(x, y, color.bitmap);
 
                                 currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
 
@@ -67,12 +80,12 @@ namespace TerrainGenerator
 
                                 if (idx != 0)
                                 {
-                                    float below_space = color.Key - lastheight;
+                                    float below_space = color.upperbound - lastheight;
 
                                     if (adjustment < (lastheight + below_space / (1 / blend)))
                                     {
                                         //We are in the lower quartile, so adjust the color towards the lower color
-                                        var lowercolor = colors[ordered_colors[idx - 1]];
+                                        var lowercolor = currentBiome.colors[idx - 1].bitmap;
 
                                         //The closer we are to the lower color, the more we should blend
                                         float amount = 8 * (((below_space / (1 / blend)) + lastheight) - adjustment);
@@ -82,7 +95,7 @@ namespace TerrainGenerator
 
                                 bmp.SetPixel(x, y, currentcolor);
                             }
-                            lastheight = color.Key;
+                            lastheight = color.upperbound;
                             ++idx;
                         }
                     }
@@ -237,23 +250,20 @@ namespace TerrainGenerator
             size = int.Parse(textBox2.Text);
             zoom = int.Parse(textBox1.Text);
             blend = float.Parse(textBox3.Text);
-            colors.Clear();
+
+            currentBiome.colors.Clear();
             if (panel1.Visible)
             {
                 foreach (var layer in layerChoosers)
                 {
                     string[] points = layer.imagesize_textbox.Text.Split(",");
                     var newsize = new Bitmap(layer.image, new Size(int.Parse(points[0]), int.Parse(points[1])));
-                    colors.Add(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0,0,newsize.Width, newsize.Height), PixelFormat.Format32bppArgb)));
+                    currentBiome.colors.Add(new BiomeLayerData(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0, 0, newsize.Width, newsize.Height), PixelFormat.Format32bppArgb))));
                 }
             }
             else
             {
-                colors.Add(0.3f, new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb)));
-                colors.Add(0.35f, new BMP(sand.Clone(new Rectangle(0, 0, sand.Width, sand.Height), PixelFormat.Format32bppArgb)));
-                colors.Add(0.55f, new BMP(grass.Clone(new Rectangle(0, 0, grass.Width, grass.Height), PixelFormat.Format32bppArgb)));
-                colors.Add(0.7f, new BMP(rock.Clone(new Rectangle(0, 0, rock.Width, rock.Height), PixelFormat.Format32bppArgb)));
-                colors.Add(1f, new BMP(snow.Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb)));
+                currentBiome.colors = defaultBiome.colors.Copy();
             }
 
             RefreshTerrain();
@@ -286,11 +296,11 @@ namespace TerrainGenerator
         }
         public class LayerChooser
         {
-            Label upperbound_label = new Label();
+            public Label upperbound_label = new Label();
             public TextBox upperbound_textbox = new TextBox();
             public TextBox imagesize_textbox = new TextBox();
-            Button uploadImageButton = new Button();
-            Button deleteButton = new Button();
+            public Button uploadImageButton = new Button();
+            public Button deleteButton = new Button();
 
             public Bitmap image;
             Func<bool> Reload;
@@ -366,7 +376,7 @@ namespace TerrainGenerator
                 if (result != DialogResult.Cancel)
                 {
                     var filetype = dialog.FileName.Split(".")[1];
-                    if (filetype != "jpg")
+                    if (filetype != "jpg" && filetype != "png" && filetype != "jfif" && filetype != "jpeg")
                     {
                         MessageBox.Show("Change filetype to .jpg");
                         return;
@@ -389,6 +399,49 @@ namespace TerrainGenerator
                 panel.Controls.Add(imagesize_textbox);
                 panel.Controls.Add(uploadImageButton);
                 panel.Controls.Add(deleteButton);
+            }
+        }
+
+        private void button3_Click(object sender, EventArgs e)
+        {
+            SaveFileDialog dialog = new SaveFileDialog();
+            dialog.FileName = currentBiome.biomeType;
+            if (dialog.ShowDialog() != DialogResult.Cancel)
+            {
+                currentBiome.Save(dialog.FileName);
+            }
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
+
+            if (dialog.ShowDialog() != DialogResult.Cancel)
+            {
+                currentBiome = Biome.FromFolder(dialog.SelectedPath);
+            }
+
+            while (layerChoosers.Count() != 0)
+            {
+                panel1.Controls.Remove(layerChoosers[0].upperbound_label);
+                panel1.Controls.Remove(layerChoosers[0].upperbound_textbox);
+                panel1.Controls.Remove(layerChoosers[0].imagesize_textbox);
+                panel1.Controls.Remove(layerChoosers[0].uploadImageButton);
+                panel1.Controls.Remove(layerChoosers[0].deleteButton);
+
+                Form1.layerChoosers.Remove(layerChoosers[0]);
+                y_pos = 40;
+            }
+            foreach (var layer in currentBiome.colors)
+            {
+                LayerChooser layerChooser = new LayerChooser(ref y_pos, Reload);
+                layerChoosers.Add(layerChooser);
+                layerChooser.AddTo(panel1);
+
+                layerChooser.upperbound_textbox.Text = layer.upperbound.ToString();
+                layerChooser.image = (Bitmap)layer.bitmap.wrappedBitmap.Clone();
+                layerChooser.imagesize_textbox.Text = string.Format("{0},{1}", layerChooser.image.Width, layerChooser.image.Height);
+                layerChooser.uploadImageButton.Text = "Auto";
             }
         }
     }
