@@ -243,7 +243,8 @@ namespace TerrainGenerator
                 foreach (var layer in layerChoosers)
                 {
                     string[] points = layer.imagesize_textbox.Text.Split(",");
-                    colors.Add(float.Parse(layer.upperbound_textbox.Text), new BMP(layer.image.Clone(new Rectangle(0,0,int.Parse(points[0]), int.Parse(points[1])), PixelFormat.Format32bppArgb)));
+                    var newsize = new Bitmap(layer.image, new Size(int.Parse(points[0]), int.Parse(points[1])));
+                    colors.Add(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0,0,newsize.Width, newsize.Height), PixelFormat.Format32bppArgb)));
                 }
             }
             else
@@ -331,6 +332,9 @@ namespace TerrainGenerator
                 upperbound_textbox.Size = new Size(100, 23);
                 upperbound_textbox.Location = new Point(86, y_pos);
 
+                imagesize_textbox.Size = new Size(70, 23);
+                imagesize_textbox.Location = new Point(120, y_pos);
+
                 uploadImageButton.Size = new Size(95, 23);
                 uploadImageButton.Location = new Point(192, y_pos);
                 uploadImageButton.Text = "Upload image";
@@ -348,6 +352,7 @@ namespace TerrainGenerator
 
                 parent.Controls.Remove(upperbound_label);
                 parent.Controls.Remove(upperbound_textbox);
+                parent.Controls.Remove(imagesize_textbox);
                 parent.Controls.Remove(uploadImageButton);
                 parent.Controls.Remove(deleteButton);
 
