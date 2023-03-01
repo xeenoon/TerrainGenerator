@@ -10,13 +10,6 @@ using System.Windows.Media.Media3D;
 
 namespace TerrainGenerator
 {
-    public enum BiomeType
-    {
-        Forest,
-        Desert,
-        Tundra,
-        Wasteland,
-    }
     internal class Map
     {
         public Biome[] biomes;
@@ -53,12 +46,12 @@ namespace TerrainGenerator
     }
     public class Biome
     {
-        public BiomeType biomeType;
+        public string biomeType;
         public Point point;
 
         public List<BiomeLayerData> colors = new List<BiomeLayerData>();
 
-        public Biome(BiomeType biomeType, Point point, List<BiomeLayerData> colors)
+        public Biome(string biomeType, Point point, List<BiomeLayerData> colors)
         {
             this.biomeType = biomeType;
             this.point = point;
@@ -66,10 +59,9 @@ namespace TerrainGenerator
             this.colors = colors.Copy();
         }
 
-        public void Write(string filepath)
+        public void Save(string folderpath)
         {
             //Will put images in a folder named with their coresponding upperbound values
-            string folderpath = Path.Combine(filepath, biomeType.ToString());
             if (!Directory.Exists(folderpath)) //If the folder doesn't exist, create it
             {
                 Directory.CreateDirectory(folderpath);
@@ -84,19 +76,14 @@ namespace TerrainGenerator
         public static Biome FromFolder(string folderpath)
         {
             Biome result = new Biome();
-            try
-            {
-                result.biomeType = Enum.Parse<BiomeType>(folderpath.Split("\\").Where(s => s != "").Last());
-            }
-            catch
-            {
-                MessageBox.Show("Invalid folder name");
-                return null;
-            }
+            result.biomeType = (folderpath.Split("\\").Where(s => s != "").Last());
+
 
             foreach (var file in Directory.EnumerateFiles(folderpath))
             {
-                var upperbound = float.Parse(file.Split(@"\\").Last().Split(".")[0]);
+                string v = file.Split(@"\").Last();
+                string s = v.Split(".")[0].Replace("_", ".");
+                var upperbound = float.Parse(s);
                 result.colors.Add(new BiomeLayerData(upperbound, new BMP(new Bitmap(Image.FromFile(file)))));
             }
             return result;

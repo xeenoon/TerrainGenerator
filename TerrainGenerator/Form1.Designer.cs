@@ -37,10 +37,10 @@
             textBox3 = new TextBox();
             button2 = new Button();
             panel1 = new Panel();
+            button5 = new Button();
+            button3 = new Button();
             button4 = new Button();
             label5 = new Label();
-            button3 = new Button();
-            button5 = new Button();
             panel1.SuspendLayout();
             SuspendLayout();
             // 
@@ -136,6 +136,26 @@
             panel1.TabIndex = 8;
             panel1.Visible = false;
             // 
+            // button5
+            // 
+            button5.Location = new Point(237, 14);
+            button5.Name = "button5";
+            button5.Size = new Size(75, 23);
+            button5.TabIndex = 9;
+            button5.Text = "Load";
+            button5.UseVisualStyleBackColor = true;
+            button5.Click += button5_Click;
+            // 
+            // button3
+            // 
+            button3.Location = new Point(156, 14);
+            button3.Name = "button3";
+            button3.Size = new Size(75, 23);
+            button3.TabIndex = 8;
+            button3.Text = "Save";
+            button3.UseVisualStyleBackColor = true;
+            button3.Click += button3_Click;
+            // 
             // button4
             // 
             button4.Location = new Point(75, 14);
@@ -155,25 +175,6 @@
             label5.Size = new Size(68, 25);
             label5.TabIndex = 6;
             label5.Text = "Layers";
-            // 
-            // button3
-            // 
-            button3.Location = new Point(156, 14);
-            button3.Name = "button3";
-            button3.Size = new Size(75, 23);
-            button3.TabIndex = 8;
-            button3.Text = "Save";
-            button3.UseVisualStyleBackColor = true;
-            button3.Click += button3_Click;
-            // 
-            // button5
-            // 
-            button5.Location = new Point(237, 14);
-            button5.Name = "button5";
-            button5.Size = new Size(75, 23);
-            button5.TabIndex = 9;
-            button5.Text = "Load";
-            button5.UseVisualStyleBackColor = true;
             // 
             // Form1
             // 

@@ -2,6 +2,7 @@ using System.ComponentModel.Design.Serialization;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TextBox;
 
 namespace TerrainGenerator
 {
@@ -30,8 +31,8 @@ namespace TerrainGenerator
                 new BiomeLayerData(1f, new BMP(snow.Clone(new Rectangle(0, 0, snow.Width, snow.Height), PixelFormat.Format32bppArgb)))
             };
 
-            defaultBiome = new Biome(BiomeType.Forest, new Point(0, 0), colors);
-            currentBiome = new Biome(BiomeType.Forest, new Point(0, 0), colors);
+            defaultBiome = new Biome("Forest", new Point(0, 0), colors);
+            currentBiome = new Biome("Forest", new Point(0, 0), colors);
         }
         int size = 1;
         int zoom = 1;
@@ -295,11 +296,11 @@ namespace TerrainGenerator
         }
         public class LayerChooser
         {
-            Label upperbound_label = new Label();
+            public Label upperbound_label = new Label();
             public TextBox upperbound_textbox = new TextBox();
             public TextBox imagesize_textbox = new TextBox();
-            Button uploadImageButton = new Button();
-            Button deleteButton = new Button();
+            public Button uploadImageButton = new Button();
+            public Button deleteButton = new Button();
 
             public Bitmap image;
             Func<bool> Reload;
@@ -404,9 +405,43 @@ namespace TerrainGenerator
         private void button3_Click(object sender, EventArgs e)
         {
             SaveFileDialog dialog = new SaveFileDialog();
+            dialog.FileName = currentBiome.biomeType;
             if (dialog.ShowDialog() != DialogResult.Cancel)
             {
-                
+                currentBiome.Save(dialog.FileName);
+            }
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
+
+            if (dialog.ShowDialog() != DialogResult.Cancel)
+            {
+                currentBiome = Biome.FromFolder(dialog.SelectedPath);
+            }
+
+            while (layerChoosers.Count() != 0)
+            {
+                panel1.Controls.Remove(layerChoosers[0].upperbound_label);
+                panel1.Controls.Remove(layerChoosers[0].upperbound_textbox);
+                panel1.Controls.Remove(layerChoosers[0].imagesize_textbox);
+                panel1.Controls.Remove(layerChoosers[0].uploadImageButton);
+                panel1.Controls.Remove(layerChoosers[0].deleteButton);
+
+                Form1.layerChoosers.Remove(layerChoosers[0]);
+                y_pos = 40;
+            }
+            foreach (var layer in currentBiome.colors)
+            {
+                LayerChooser layerChooser = new LayerChooser(ref y_pos, Reload);
+                layerChoosers.Add(layerChooser);
+                layerChooser.AddTo(panel1);
+
+                layerChooser.upperbound_textbox.Text = layer.upperbound.ToString();
+                layerChooser.image = (Bitmap)layer.bitmap.wrappedBitmap.Clone();
+                layerChooser.imagesize_textbox.Text = string.Format("{0},{1}", layerChooser.image.Width, layerChooser.image.Height);
+                layerChooser.uploadImageButton.Text = "Auto";
             }
         }
     }
