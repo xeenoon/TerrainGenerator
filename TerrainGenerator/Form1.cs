@@ -242,7 +242,8 @@ namespace TerrainGenerator
             {
                 foreach (var layer in layerChoosers)
                 {
-                    colors.Add(float.Parse(layer.upperbound_textbox.Text), layer.image);
+                    string[] points = layer.imagesize_textbox.Text.Split(",");
+                    colors.Add(float.Parse(layer.upperbound_textbox.Text), new BMP(layer.image.Clone(new Rectangle(0,0,int.Parse(points[0]), int.Parse(points[1])), PixelFormat.Format32bppArgb)));
                 }
             }
             else
@@ -286,10 +287,11 @@ namespace TerrainGenerator
         {
             Label upperbound_label = new Label();
             public TextBox upperbound_textbox = new TextBox();
+            public TextBox imagesize_textbox = new TextBox();
             Button uploadImageButton = new Button();
             Button deleteButton = new Button();
 
-            public BMP image;
+            public Bitmap image;
             Func<bool> Reload;
 
             public LayerChooser(ref int y_pos, Func<bool> Reload)
@@ -300,8 +302,12 @@ namespace TerrainGenerator
                 upperbound_label.Location = new Point(3, y_pos + 3);
                 upperbound_label.AutoSize = true;
 
-                upperbound_textbox.Size = new Size(100, 23);
+                upperbound_textbox.Size = new Size(30, 23);
                 upperbound_textbox.Location = new Point(86, y_pos);
+
+                imagesize_textbox.Size = new Size(70, 23);
+                imagesize_textbox.Location = new Point(120, y_pos);
+
 
                 uploadImageButton.Size = new Size(95, 23);
                 uploadImageButton.Location = new Point(192, y_pos);
@@ -361,10 +367,11 @@ namespace TerrainGenerator
                         return;
                     }
 
-                    Bitmap image = (Bitmap)Image.FromFile(dialog.FileName);
-                    this.image = new BMP(image.Clone(new Rectangle(0, 0, image.Width, image.Height), PixelFormat.Format32bppArgb));
+                    image = (Bitmap)Image.FromFile(dialog.FileName);
                     //Image should now be successfully uploaded
                     uploadImageButton.Text = dialog.FileName.Split("\\").Last();
+
+                    imagesize_textbox.Text = String.Format("{0},{1}", image.Width, image.Height);
                 }
             }
             Panel parent;
@@ -374,6 +381,7 @@ namespace TerrainGenerator
                 parent = panel;
                 panel.Controls.Add(upperbound_label);
                 panel.Controls.Add(upperbound_textbox);
+                panel.Controls.Add(imagesize_textbox);
                 panel.Controls.Add(uploadImageButton);
                 panel.Controls.Add(deleteButton);
             }
