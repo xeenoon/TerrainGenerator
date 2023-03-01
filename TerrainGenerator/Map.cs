@@ -56,17 +56,14 @@ namespace TerrainGenerator
         public BiomeType biomeType;
         public Point point;
 
-        private List<BiomeLayerData> colors = new List<BiomeLayerData>();
+        public List<BiomeLayerData> colors = new List<BiomeLayerData>();
 
-        public Biome(BiomeType biomeType, Point point, Dictionary<float, BMP> colors)
+        public Biome(BiomeType biomeType, Point point, List<BiomeLayerData> colors)
         {
             this.biomeType = biomeType;
             this.point = point;
 
-            foreach (var c in colors)
-            {
-                this.colors.Add(new BiomeLayerData(c.Key, c.Value));
-            }
+            this.colors = colors.Copy();
         }
 
         public void Write(string filepath)
