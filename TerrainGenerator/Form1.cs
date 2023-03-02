@@ -18,10 +18,11 @@ namespace TerrainGenerator
 
         Bitmap result;
         Biome defaultBiome;
+        System.Timers.Timer movetimer = new System.Timers.Timer();
         public Form1()
         {
             InitializeComponent();
-
+            stableposition = new Rectangle(Width/2 - 50, Height/2 - 50, 100, 100);
             List<BiomeLayerData> colors = new()
             {
                 new BiomeLayerData(0.3f, new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb))),
@@ -33,6 +34,10 @@ namespace TerrainGenerator
 
             defaultBiome = new Biome("Forest", new Point(0, 0), colors);
             currentBiome = new Biome("Forest", new Point(0, 0), colors);
+
+            movetimer.Interval = 50;
+            movetimer.Elapsed += new System.Timers.ElapsedEventHandler(Tick);
+            movetimer.Start();
         }
         int size = 1;
         int zoom = 1;
@@ -120,13 +125,9 @@ namespace TerrainGenerator
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            try
+            if(result != null)
             {
-                e.Graphics.DrawImage(result, 0, 0, Width, Height);
-            }
-            catch
-            {
-
+                e.Graphics.DrawImage(result, position.X, position.Y, result.Width, result.Height);
             }
         }
 
@@ -443,6 +444,33 @@ namespace TerrainGenerator
                 layerChooser.imagesize_textbox.Text = string.Format("{0},{1}", layerChooser.image.Width, layerChooser.image.Height);
                 layerChooser.uploadImageButton.Text = "Auto";
             }
+        }
+
+        Rectangle stableposition;
+        Point velocity = new Point(0,0);
+        Point position = new Point(0,0);
+        bool changine = false;
+        private void Form1_MouseMove(object sender, MouseEventArgs e)
+        {
+            if (result != null)
+            {
+                if (!stableposition.Contains(e.Location))
+                {
+                    velocity.X = ((Width  / 2) - e.Location.X) / 40;
+                    velocity.Y = ((Height / 2) - e.Location.Y) / 40;
+                }
+                else
+                {
+                    velocity.X = 0;
+                    velocity.Y = 0;
+                }
+                Invalidate();
+            }
+        }
+        private void Tick(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            position = new Point(position.X + velocity.X, position.Y + velocity.Y);
+            Invalidate();
         }
     }
 }
