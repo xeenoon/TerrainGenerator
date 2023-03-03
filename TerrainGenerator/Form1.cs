@@ -85,15 +85,19 @@ namespace TerrainGenerator
 
                                 if (idx != 0)
                                 {
-                                    float below_space = color.upperbound - lastheight;
+                                    float upperbound = color.upperbound;
+                                    float lowerbound = currentBiome.colors[idx - 1].upperbound;
+                                    float size = upperbound - lowerbound;
 
-                                    if (adjustment < (lastheight + below_space / (1 / blend)))
+                                    float above_space = upperbound - adjustment;
+
+                                    if (above_space < (size))
                                     {
                                         //We are in the lower quartile, so adjust the color towards the lower color
                                         var lowercolor = currentBiome.colors[idx - 1].bitmap;
 
                                         //The closer we are to the lower color, the more we should blend
-                                        float amount = 8 * (((below_space / (1 / blend)) + lastheight) - adjustment);
+                                        float amount = (above_space)/(2 * size);
                                         currentcolor = Blend(currentcolor, SampleColor(x, y, lowercolor), amount);
                                     }
                                 }
@@ -251,6 +255,7 @@ namespace TerrainGenerator
             size = int.Parse(textBox2.Text);
             zoom = int.Parse(textBox1.Text);
             blend = float.Parse(textBox3.Text);
+            position = new Point(0,0);
 
             currentBiome.colors.Clear();
             if (panel1.Visible)
