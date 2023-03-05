@@ -76,6 +76,10 @@ namespace TerrainGenerator
                         int grayscale = (255 / biomes.Count()) * (idx + 1);
                         bmp.SetPixel(x, y, Color.FromArgb(grayscale, grayscale, grayscale));
                     }
+                    else if (circle.InCircleBorder(new Point(x, y)))
+                    {
+                        bmp.SetPixel(x, y, Color.FromArgb(150, 75, 0));
+                    }
                 }
             }
             return bmp;
@@ -153,6 +157,10 @@ namespace TerrainGenerator
         public bool PointInCircle(Point point)
         {
             return DistanceBetweenPoints(point, new Point(radius, radius)) < radius;
+        }
+        public bool InCircleBorder(Point point)
+        {
+            return DistanceBetweenPoints(point, new Point(radius, radius)) < (radius+10);
         }
         double DistanceBetweenPoints(Point p1, Point p2)
         {
