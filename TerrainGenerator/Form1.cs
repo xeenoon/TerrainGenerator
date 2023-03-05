@@ -504,5 +504,25 @@ namespace TerrainGenerator
             position = new Point(position.X + velocity.X, position.Y + velocity.Y);
             Invalidate();
         }
+
+        private void button8_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        public class BiomeChooser
+        {
+            Label nameLabel;
+            Button deleteButton;
+            Panel parent;
+
+            public BiomeChooser(int yidx, Panel parent, string name)
+            {
+                nameLabel = new Label() { Location = new Point(6, 51 + (yidx * 50)), Text = name };
+                deleteButton = new Button() { Location = new Point(85, ) }
+                parent.Controls.Add(nameLabel);
+                this.parent = parent;
+            }
+        }
     }
 }
