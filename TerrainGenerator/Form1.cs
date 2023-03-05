@@ -22,7 +22,7 @@ namespace TerrainGenerator
         public Form1()
         {
             InitializeComponent();
-            stableposition = new Rectangle(Width/2 - 50, Height/2 - 50, 100, 100);
+            stableposition = new Rectangle(Width / 2 - 50, Height / 2 - 50, 100, 100);
             List<BiomeLayerData> colors = new()
             {
                 new BiomeLayerData(0.3f, new BMP(water.Clone(new Rectangle(0, 0, water.Width, water.Height), PixelFormat.Format32bppArgb))),
@@ -97,7 +97,7 @@ namespace TerrainGenerator
                                         var lowercolor = currentBiome.colors[idx - 1].bitmap;
 
                                         //The closer we are to the lower color, the more we should blend
-                                        float amount = (above_space)/(2 * size);
+                                        float amount = (above_space) / (2 * size);
                                         currentcolor = Blend(currentcolor, SampleColor(x, y, lowercolor), amount);
                                     }
                                 }
@@ -129,7 +129,7 @@ namespace TerrainGenerator
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
-            if(result != null)
+            if (result != null)
             {
                 e.Graphics.DrawImage(result, position.X, position.Y, result.Width, result.Height);
             }
@@ -255,16 +255,31 @@ namespace TerrainGenerator
             size = int.Parse(textBox2.Text);
             zoom = int.Parse(textBox1.Text);
             blend = float.Parse(textBox3.Text);
-            position = new Point(0,0);
+            position = new Point(0, 0);
 
+            if (textBox4.Text != "") 
+            {
+                PerlinNoise.random = new Random(int.Parse(textBox4.Text));
+            }
+            else
+            {
+                PerlinNoise.random = new Random();
+            }
             currentBiome.colors.Clear();
             if (panel1.Visible)
             {
                 foreach (var layer in layerChoosers)
                 {
-                    string[] points = layer.imagesize_textbox.Text.Split(",");
-                    var newsize = new Bitmap(layer.image, new Size(int.Parse(points[0]), int.Parse(points[1])));
-                    currentBiome.colors.Add(new BiomeLayerData(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0, 0, newsize.Width, newsize.Height), PixelFormat.Format32bppArgb))));
+                    try
+                    {
+                        string[] points = layer.imagesize_textbox.Text.Split(",");
+                        var newsize = new Bitmap(layer.image, new Size(int.Parse(points[0]), int.Parse(points[1])));
+                        currentBiome.colors.Add(new BiomeLayerData(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0, 0, newsize.Width, newsize.Height), PixelFormat.Format32bppArgb))));
+                    }
+                    catch
+                    {
+                        MessageBox.Show("Layer of upperbound {0} was formatted incorrectly. Was ignored", layer.upperbound_textbox.Text);
+                    }
                 }
             }
             else
@@ -452,8 +467,8 @@ namespace TerrainGenerator
         }
 
         Rectangle stableposition;
-        Point velocity = new Point(0,0);
-        Point position = new Point(0,0);
+        Point velocity = new Point(0, 0);
+        Point position = new Point(0, 0);
         bool changine = false;
         private void Form1_MouseMove(object sender, MouseEventArgs e)
         {
@@ -461,7 +476,7 @@ namespace TerrainGenerator
             {
                 if (!stableposition.Contains(e.Location))
                 {
-                    velocity.X = ((Width  / 2) - e.Location.X) / 40;
+                    velocity.X = ((Width / 2) - e.Location.X) / 40;
                     velocity.Y = ((Height / 2) - e.Location.Y) / 40;
                 }
                 else
