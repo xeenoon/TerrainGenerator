@@ -22,17 +22,6 @@ namespace TerrainGenerator
         public Form1()
         {
             InitializeComponent();
-            FormBorderStyle = FormBorderStyle.None;
-            WindowState = FormWindowState.Maximized;
-
-            int height = System.Windows.Forms.SystemInformation.PrimaryMonitorSize.Height;
-            int width = System.Windows.Forms.SystemInformation.PrimaryMonitorSize.Width;
-
-            Map map = new Map(15, width, height);
-
-            result = (Bitmap)map.Draw().wrappedBitmap.Clone();
-            Invalidate();
-            return;
 
             stableposition = new Rectangle(Width / 2 - 50, Height / 2 - 50, 100, 100);
             List<BiomeLayerData> colors = new()
@@ -306,6 +295,7 @@ namespace TerrainGenerator
         private void button2_Click(object sender, EventArgs e)
         {
             panel1.Visible = !panel1.Visible;
+            panel2.Visible = !panel2.Visible;
         }
 
         public bool Reload()
@@ -505,22 +495,40 @@ namespace TerrainGenerator
             Invalidate();
         }
 
+        List<BiomeChooser> biomeChoosers = new List<BiomeChooser>();
+        int yidx = 0;
         private void button8_Click(object sender, EventArgs e)
         {
+            FolderBrowserDialog dialog = new FolderBrowserDialog();
 
+            Biome b;
+            if (dialog.ShowDialog() != DialogResult.Cancel)
+            {
+                b = Biome.FromFolder(dialog.SelectedPath);
+            }
+
+            BiomeChooser biomeChooser = new BiomeChooser(yidx, panel2, dialog.SelectedPath.Split("\\").Last());
+            ++yidx;
+            biomeChoosers.Add(biomeChooser);
         }
 
         public class BiomeChooser
         {
+            Panel handle;
             Label nameLabel;
             Button deleteButton;
             Panel parent;
 
             public BiomeChooser(int yidx, Panel parent, string name)
             {
-                nameLabel = new Label() { Location = new Point(6, 51 + (yidx * 50)), Text = name };
-                deleteButton = new Button() { Location = new Point(85, ) }
-                parent.Controls.Add(nameLabel);
+                handle = new Panel() { Location = new Point(10, 43 + (yidx * 30)), Size = new Size(145, 25), BackColor = Color.FromArgb(100, 100, 100) };
+                nameLabel = new Label() { Location = new Point(0, 5), Text = name, AutoSize = true, ForeColor = Color.White};
+                deleteButton = new Button() { Location = new Point(120, 1), Size = new Size(21, 23), Text = "X", ForeColor = parent.ForeColor, BackColor = parent.BackColor};
+                handle.Controls.Add(nameLabel);
+                handle.Controls.Add(deleteButton);
+                parent.Controls.Add(handle);
+
+
                 this.parent = parent;
             }
         }

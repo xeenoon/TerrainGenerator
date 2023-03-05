@@ -44,14 +44,10 @@
             textBox4 = new TextBox();
             label4 = new Label();
             panel2 = new Panel();
-            button6 = new Button();
-            label7 = new Label();
             button8 = new Button();
             label6 = new Label();
-            panel3 = new Panel();
             panel1.SuspendLayout();
             panel2.SuspendLayout();
-            panel3.SuspendLayout();
             SuspendLayout();
             // 
             // button1
@@ -207,7 +203,6 @@
             // panel2
             // 
             panel2.Anchor = AnchorStyles.Top | AnchorStyles.Right;
-            panel2.Controls.Add(panel3);
             panel2.Controls.Add(button8);
             panel2.Controls.Add(label6);
             panel2.Location = new Point(383, 12);
@@ -215,24 +210,6 @@
             panel2.Size = new Size(167, 703);
             panel2.TabIndex = 10;
             panel2.Visible = false;
-            // 
-            // button6
-            // 
-            button6.Location = new Point(115, 5);
-            button6.Name = "button6";
-            button6.Size = new Size(21, 23);
-            button6.TabIndex = 9;
-            button6.Text = "X";
-            button6.UseVisualStyleBackColor = true;
-            // 
-            // label7
-            // 
-            label7.AutoSize = true;
-            label7.Location = new Point(8, 9);
-            label7.Name = "label7";
-            label7.Size = new Size(73, 15);
-            label7.TabIndex = 8;
-            label7.Text = "BiomeName";
             // 
             // button8
             // 
@@ -253,16 +230,6 @@
             label6.Size = new Size(76, 25);
             label6.TabIndex = 6;
             label6.Text = "Biomes";
-            // 
-            // panel3
-            // 
-            panel3.BackColor = SystemColors.ActiveCaption;
-            panel3.Controls.Add(label7);
-            panel3.Controls.Add(button6);
-            panel3.Location = new Point(10, 43);
-            panel3.Name = "panel3";
-            panel3.Size = new Size(145, 34);
-            panel3.TabIndex = 10;
             // 
             // Form1
             // 
@@ -290,8 +257,6 @@
             panel1.PerformLayout();
             panel2.ResumeLayout(false);
             panel2.PerformLayout();
-            panel3.ResumeLayout(false);
-            panel3.PerformLayout();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -316,8 +281,5 @@
         private Panel panel2;
         private Button button8;
         private Label label6;
-        private Label label7;
-        private Button button6;
-        private Panel panel3;
     }
 }
