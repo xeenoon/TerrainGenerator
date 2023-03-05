@@ -22,6 +22,18 @@ namespace TerrainGenerator
         public Form1()
         {
             InitializeComponent();
+            FormBorderStyle = FormBorderStyle.None;
+            WindowState = FormWindowState.Maximized;
+
+            int height = System.Windows.Forms.SystemInformation.PrimaryMonitorSize.Height;
+            int width = System.Windows.Forms.SystemInformation.PrimaryMonitorSize.Width;
+
+            Map map = new Map(15, width, height);
+
+            result = (Bitmap)map.Draw().wrappedBitmap.Clone();
+            Invalidate();
+            return;
+
             stableposition = new Rectangle(Width / 2 - 50, Height / 2 - 50, 100, 100);
             List<BiomeLayerData> colors = new()
             {
@@ -257,7 +269,7 @@ namespace TerrainGenerator
             blend = float.Parse(textBox3.Text);
             position = new Point(0, 0);
 
-            if (textBox4.Text != "") 
+            if (textBox4.Text != "")
             {
                 PerlinNoise.random = new Random(int.Parse(textBox4.Text));
             }

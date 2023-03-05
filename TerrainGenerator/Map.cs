@@ -15,12 +15,17 @@ namespace TerrainGenerator
         public Biome[] biomes;
         public int width;
         public int height;
+        public Bitmap map;
 
-        public Map(Biome[] biomes, int width, int height)
+        Circle circle;
+
+        public Map(int biomes, int width, int height)
         {
-            this.biomes = biomes;
             this.width = width;
             this.height = height;
+            map = new Bitmap(width, height);
+            circle = new Circle(width < height ? width / 2 : height / 2);
+            PlaceBiomes(biomes);
         }
 
         public Biome FromPoint(Point point) //Find the biome that the point is in. It will be the closest biome
@@ -43,6 +48,38 @@ namespace TerrainGenerator
         {
             return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
+
+        Random random = new Random();
+        public void PlaceBiomes(int amount)
+        {
+            biomes = new Biome[amount];
+            for (int i = 0; i < amount; ++i)
+            {
+                Point point;
+                do 
+                {
+                    point = new Point(random.Next(0, width), random.Next(0, height));
+                } while (!circle.PointInCircle(point));
+                biomes[i] = new Biome(point);
+            }
+        }
+        public BMP Draw()
+        {
+            var bmp = new BMP(map);
+            for (int x = 0; x < width; ++x)
+            {
+                for (int y = 0; y < height; ++y)
+                {
+                    if (circle.PointInCircle(new Point(x,y))) 
+                    {
+                        var idx = Array.IndexOf(biomes, FromPoint(new Point(x, y)));
+                        int grayscale = (255 / biomes.Count()) * (idx + 1);
+                        bmp.SetPixel(x, y, Color.FromArgb(grayscale, grayscale, grayscale));
+                    }
+                }
+            }
+            return bmp;
+        }
     }
     public class Biome
     {
@@ -50,7 +87,10 @@ namespace TerrainGenerator
         public Point point;
 
         public List<BiomeLayerData> colors = new List<BiomeLayerData>();
-
+        public Biome(Point point)
+        {
+            this.point = point;
+        }
         public Biome(string biomeType, Point point, List<BiomeLayerData> colors)
         {
             this.biomeType = biomeType;
@@ -98,6 +138,25 @@ namespace TerrainGenerator
         {
             this.upperbound = upperbound;
             this.bitmap = bitmap;
+        }
+    }
+
+    public class Circle
+    {
+        int radius;
+
+        public Circle(int radius)
+        {
+            this.radius = radius;
+        }
+
+        public bool PointInCircle(Point point)
+        {
+            return DistanceBetweenPoints(point, new Point(radius, radius)) < radius;
+        }
+        double DistanceBetweenPoints(Point p1, Point p2)
+        {
+            return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
     }
 }
