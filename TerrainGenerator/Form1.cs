@@ -495,7 +495,7 @@ namespace TerrainGenerator
             Invalidate();
         }
 
-        List<BiomeChooser> biomeChoosers = new List<BiomeChooser>();
+        public static List<BiomeChooser> biomeChoosers = new List<BiomeChooser>();
         int yidx = 0;
         private void button8_Click(object sender, EventArgs e)
         {
@@ -506,8 +506,12 @@ namespace TerrainGenerator
             {
                 b = Biome.FromFolder(dialog.SelectedPath);
             }
+            else
+            {
+                return;
+            }
 
-            BiomeChooser biomeChooser = new BiomeChooser(yidx, panel2, dialog.SelectedPath.Split("\\").Last());
+            BiomeChooser biomeChooser = new BiomeChooser(yidx, panel2, dialog.SelectedPath.Split("\\").Last(), b, panel1);
             ++yidx;
             biomeChoosers.Add(biomeChooser);
         }
@@ -519,17 +523,108 @@ namespace TerrainGenerator
             Button deleteButton;
             Panel parent;
 
-            public BiomeChooser(int yidx, Panel parent, string name)
+            Biome b;
+            List<LayerChooser> layers = new List<LayerChooser>();
+            Panel layerPanel;
+
+
+            public BiomeChooser(int yidx, Panel parent, string name, Biome b, Panel layerpanel)
             {
                 handle = new Panel() { Location = new Point(10, 43 + (yidx * 30)), Size = new Size(145, 25), BackColor = Color.FromArgb(100, 100, 100) };
+                handle.Click += new EventHandler(BiomeClick);
                 nameLabel = new Label() { Location = new Point(0, 5), Text = name, AutoSize = true, ForeColor = Color.White};
                 deleteButton = new Button() { Location = new Point(120, 1), Size = new Size(21, 23), Text = "X", ForeColor = parent.ForeColor, BackColor = parent.BackColor};
                 handle.Controls.Add(nameLabel);
                 handle.Controls.Add(deleteButton);
                 parent.Controls.Add(handle);
 
-
+                this.b = b;
+                this.layerPanel = layerpanel;
                 this.parent = parent;
+            }
+            bool showing;
+            public void ShowLayers()
+            {
+                foreach (var biome in Form1.biomeChoosers)
+                {
+                    if (biome != this)
+                    {
+                        biome.HideLayers();
+                        biome.handle.BackColor = Color.FromArgb(100, 100, 100);
+                    }
+                }
+
+                showing = true;
+                var y_pos = 40;
+                foreach (var layer in b.colors)
+                {
+                    LayerChooser layerChooser = new LayerChooser(ref y_pos, Reload);
+                    layers.Add(layerChooser);
+                    layerChooser.AddTo(layerPanel);
+
+                    layerChooser.upperbound_textbox.Text = layer.upperbound.ToString();
+                    layerChooser.image = (Bitmap)layer.bitmap.wrappedBitmap.Clone();
+                    layerChooser.imagesize_textbox.Text = string.Format("{0},{1}", layerChooser.image.Width, layerChooser.image.Height);
+                    layerChooser.uploadImageButton.Text = "Auto";
+                }
+            }
+            public void HideLayers()
+            {
+                if (showing) 
+                {
+                    showing = false;
+
+                    b.colors.Clear();
+                    foreach (var layer in layers)
+                    {
+                        try
+                        {
+                            string[] points = layer.imagesize_textbox.Text.Split(",");
+                            var newsize = new Bitmap(layer.image, new Size(int.Parse(points[0]), int.Parse(points[1])));
+                            b.colors.Add(new BiomeLayerData(float.Parse(layer.upperbound_textbox.Text), new BMP(newsize.Clone(new Rectangle(0, 0, newsize.Width, newsize.Height), PixelFormat.Format32bppArgb))));
+                        }
+                        catch
+                        {
+                            MessageBox.Show("Layer of upperbound {0} was formatted incorrectly. Was ignored", layer.upperbound_textbox.Text);
+                        }
+                    }
+
+                    while (layers.Count() != 0)
+                    {
+                        layerPanel.Controls.Remove(layers[0].upperbound_label);
+                        layerPanel.Controls.Remove(layers[0].upperbound_textbox);
+                        layerPanel.Controls.Remove(layers[0].imagesize_textbox);
+                        layerPanel.Controls.Remove(layers[0].uploadImageButton);
+                        layerPanel.Controls.Remove(layers[0].deleteButton);
+
+                        layers.Remove(layers[0]);
+                    }
+                }
+            }
+
+            public void BiomeClick(object sender, EventArgs e)
+            {
+                if (showing)
+                {
+                    handle.BackColor = Color.FromArgb(100, 100, 100);
+                    HideLayers();
+                }
+                else
+                {
+                    handle.BackColor = Color.Blue;
+                    ShowLayers();
+                }
+            }
+
+            public bool Reload()
+            {
+                var y_pos = 40;
+                foreach (var layer in layerChoosers)
+                {
+                    layer.Reset(ref y_pos);
+                }
+
+                return true;
             }
         }
     }
