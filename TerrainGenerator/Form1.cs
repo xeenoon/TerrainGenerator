@@ -41,7 +41,7 @@ namespace TerrainGenerator
             movetimer.Start();
         }
         int size = 1;
-        int zoom = 1;
+        public static int zoom = 1;
         float blend = 0;
         private void RefreshTerrain()
         {
@@ -70,7 +70,7 @@ namespace TerrainGenerator
                             if (adjustment > lastheight && adjustment < color.upperbound)
                             {
                                 //Sample color texture
-                                Color currentcolor = SampleColor(x, y, color.bitmap);
+                                Color currentcolor = color.bitmap.SampleColor(x, y);
 
                                 currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
 
@@ -99,7 +99,7 @@ namespace TerrainGenerator
 
                                         //The closer we are to the lower color, the more we should blend
                                         float amount = (above_space) / (2 * size);
-                                        currentcolor = Blend(currentcolor, SampleColor(x, y, lowercolor), amount);
+                                        currentcolor = Blend(currentcolor, lowercolor.SampleColor(x, y), amount);
                                     }
                                 }
 
@@ -113,20 +113,6 @@ namespace TerrainGenerator
             }
         }
 
-        private Color SampleColor(int x, int y, BMP bmp)
-        {
-            var adjusted_x = x;
-            var adjusted_y = y;
-            while (adjusted_x >= bmp.Width)
-            {
-                adjusted_x -= bmp.Width;
-            }
-            while (adjusted_y >= bmp.Height)
-            {
-                adjusted_y -= bmp.Height;
-            }
-            return bmp.GetPixel(adjusted_x, adjusted_y);
-        }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
         {
@@ -258,6 +244,11 @@ namespace TerrainGenerator
             blend = float.Parse(textBox3.Text);
             position = new Point(0, 0);
 
+            Map map = new Map(biomeChoosers.Select(b=>b.b).ToList(), Width, Height);
+            result = (Bitmap)map.Draw().wrappedBitmap.Clone();
+            Invalidate();
+
+            return;
             if (textBox4.Text != "")
             {
                 PerlinNoise.random = new Random(int.Parse(textBox4.Text));
@@ -523,7 +514,7 @@ namespace TerrainGenerator
             Button deleteButton;
             Panel parent;
 
-            Biome b;
+            public Biome b;
             List<LayerChooser> layers = new List<LayerChooser>();
             Panel layerPanel;
 
