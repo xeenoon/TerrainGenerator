@@ -64,6 +64,7 @@ namespace TerrainGenerator
                 biomes[i].point = point;
             }
         }
+
         public BMP Draw()
         {
             var bmp = new BMP(map);
@@ -98,18 +99,6 @@ namespace TerrainGenerator
                             {
                                 //Sample color texture
                                 Color currentcolor = color.bitmap.SampleColor(x, y);
-
-                                //currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
-
-                                //Blend stuff to the lower "1/blend" of the color for the previous one
-
-                                //Like this, if the lower color starts at 0.1, and thie color is from 0.1,0.9 with a blend of (1/4)
-                                //0.1 18% blended towards lower color
-                                //0.2 9% blurred towards lower color
-                                //0.3 no blur
-                                //0.4 no blur
-                                //...
-
 
                                 if (idx != 0)
                                 {
@@ -271,6 +260,48 @@ namespace TerrainGenerator
         double DistanceBetweenPoints(Point p1, Point p2)
         {
             return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
+        }
+    }
+
+    public class DetailArea
+    {
+        public Point location;
+        public int lowestarea;
+        public int highestarea;
+
+        public PointF[] points = new PointF[360]; //1 point per degrees
+
+        public DetailArea(int lowestarea, int highestarea)
+        {
+            this.lowestarea = lowestarea;
+            this.highestarea = highestarea;
+        }
+        Random random = new Random();
+        public void Generate()
+        {
+            double startradius = Math.Sqrt(((lowestarea+highestarea)/2)/Math.PI); //Circle area = pi*r^2, r = sqrt(area/pi)
+            for (int degrees = 0; degrees < 360; ++degrees)
+            {
+                startradius = random.Next((int)(startradius/0.9f), (int)(startradius/1.1f)); //Add some vibration to the startradius
+                
+                //Do a right angle triangle, where degrees = theta, and c = startradius
+                
+                //For x coordinate, we use adjacent side
+                //Cos(a/h)=theta
+                //a=h*arccos(theta)
+                double a = startradius*Math.Acos(DegToRad(startradius));
+
+                //For y coordinate, we use opposite side
+                //Sin(o/h)=theta
+                //o=h*arcsin(theta)
+                double o = startradius * Math.Asin(DegToRad(startradius));
+                points[degrees] = new PointF((float)a,(float)o);
+            }
+        }
+
+        private static double DegToRad(double deg)
+        {
+            return deg * (Math.PI / 180);
         }
     }
 }
