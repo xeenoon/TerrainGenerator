@@ -116,7 +116,7 @@
             textBox3.Name = "textBox3";
             textBox3.Size = new Size(46, 23);
             textBox3.TabIndex = 6;
-            textBox3.Text = "0.125";
+            textBox3.Text = "1.9";
             // 
             // button2
             // 

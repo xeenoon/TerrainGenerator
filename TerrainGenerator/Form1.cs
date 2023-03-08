@@ -42,7 +42,7 @@ namespace TerrainGenerator
         }
         int size = 1;
         public static int zoom = 1;
-        float blend = 0;
+        public static float blend = 0;
         private void RefreshTerrain()
         {
             List<float> total = new List<float>();
@@ -72,7 +72,7 @@ namespace TerrainGenerator
                                 //Sample color texture
                                 Color currentcolor = color.bitmap.SampleColor(x, y);
 
-                                currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
+                                //currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
 
                                 //Blend stuff to the lower "1/blend" of the color for the previous one
 
@@ -162,89 +162,22 @@ namespace TerrainGenerator
             }
             return Color.FromArgb(color.A, (int)red, (int)green, (int)blue);
         }
-        private static Bitmap Blur(Bitmap image, Int32 blurSize)
-        {
-            return Blur(image, new Rectangle(0, 0, image.Width, image.Height), blurSize);
-        }
-
-        private unsafe static Bitmap Blur(Bitmap image, Rectangle rectangle, Int32 blurSize)
-        {
-            Bitmap blurred = new Bitmap(image.Width, image.Height);
-
-            // make an exact copy of the bitmap provided
-            using (Graphics graphics = Graphics.FromImage(blurred))
-                graphics.DrawImage(image, new Rectangle(0, 0, image.Width, image.Height),
-                    new Rectangle(0, 0, image.Width, image.Height), GraphicsUnit.Pixel);
-
-            // Lock the bitmap's bits
-            BitmapData blurredData = blurred.LockBits(new Rectangle(0, 0, image.Width, image.Height), ImageLockMode.ReadWrite, blurred.PixelFormat);
-
-            // Get bits per pixel for current PixelFormat
-            int bitsPerPixel = Image.GetPixelFormatSize(blurred.PixelFormat);
-
-            // Get pointer to first line
-            byte* scan0 = (byte*)blurredData.Scan0.ToPointer();
-
-            // look at every pixel in the blur rectangle
-            for (int xx = rectangle.X; xx < rectangle.X + rectangle.Width; xx++)
-            {
-                for (int yy = rectangle.Y; yy < rectangle.Y + rectangle.Height; yy++)
-                {
-                    int avgR = 0, avgG = 0, avgB = 0;
-                    int blurPixelCount = 0;
-
-                    // average the color of the red, green and blue for each pixel in the
-                    // blur size while making sure you don't go outside the image bounds
-                    for (int x = xx; (x < xx + blurSize && x < image.Width); x++)
-                    {
-                        for (int y = yy; (y < yy + blurSize && y < image.Height); y++)
-                        {
-                            // Get pointer to RGB
-                            byte* data = scan0 + y * blurredData.Stride + x * bitsPerPixel / 8;
-
-                            avgB += data[0]; // Blue
-                            avgG += data[1]; // Green
-                            avgR += data[2]; // Red
-
-                            blurPixelCount++;
-                        }
-                    }
-
-                    avgR = avgR / blurPixelCount;
-                    avgG = avgG / blurPixelCount;
-                    avgB = avgB / blurPixelCount;
-
-                    // now that we know the average for the blur size, set each pixel to that color
-                    for (int x = xx; x < xx + blurSize && x < image.Width && x < rectangle.Width; x++)
-                    {
-                        for (int y = yy; y < yy + blurSize && y < image.Height && y < rectangle.Height; y++)
-                        {
-                            // Get pointer to RGB
-                            byte* data = scan0 + y * blurredData.Stride + x * bitsPerPixel / 8;
-
-                            // Change values
-                            data[0] = (byte)avgB;
-                            data[1] = (byte)avgG;
-                            data[2] = (byte)avgR;
-                        }
-                    }
-                }
-            }
-
-            // Unlock the bits
-            blurred.UnlockBits(blurredData);
-
-            return blurred;
-        }
-
         private void button1_Click(object sender, EventArgs e)
         {
             size = int.Parse(textBox2.Text);
             zoom = int.Parse(textBox1.Text);
             blend = float.Parse(textBox3.Text);
+            if (textBox4.Text != "")
+            {
+                PerlinNoise.random = new Random(int.Parse(textBox4.Text));
+            }
+            else
+            {
+                PerlinNoise.random = new Random();
+            }
             position = new Point(0, 0);
 
-            Map map = new Map(biomeChoosers.Select(b=>b.b).ToList(), Width, Height);
+            Map map = new Map(biomeChoosers.Select(b => b.b).ToList(), Width, Height);
             result = (Bitmap)map.Draw().wrappedBitmap.Clone();
             Invalidate();
 
@@ -523,8 +456,8 @@ namespace TerrainGenerator
             {
                 handle = new Panel() { Location = new Point(10, 43 + (yidx * 30)), Size = new Size(145, 25), BackColor = Color.FromArgb(100, 100, 100) };
                 handle.Click += new EventHandler(BiomeClick);
-                nameLabel = new Label() { Location = new Point(0, 5), Text = name, AutoSize = true, ForeColor = Color.White};
-                deleteButton = new Button() { Location = new Point(120, 1), Size = new Size(21, 23), Text = "X", ForeColor = parent.ForeColor, BackColor = parent.BackColor};
+                nameLabel = new Label() { Location = new Point(0, 5), Text = name, AutoSize = true, ForeColor = Color.White };
+                deleteButton = new Button() { Location = new Point(120, 1), Size = new Size(21, 23), Text = "X", ForeColor = parent.ForeColor, BackColor = parent.BackColor };
                 handle.Controls.Add(nameLabel);
                 handle.Controls.Add(deleteButton);
                 parent.Controls.Add(handle);
@@ -561,7 +494,7 @@ namespace TerrainGenerator
             }
             public void HideLayers()
             {
-                if (showing) 
+                if (showing)
                 {
                     showing = false;
 

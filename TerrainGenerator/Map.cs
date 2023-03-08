@@ -88,14 +88,18 @@ namespace TerrainGenerator
                         var currentBiome = FromPoint(new Point(x, y));
                         float lastheight = 0;
                         int idx = 0;
+                        if (adjustment >= 1)
+                        {
+                            adjustment = 1;
+                        }
                         foreach (var color in currentBiome.colors)
                         {
-                            if (adjustment > lastheight && adjustment < color.upperbound)
+                            if (adjustment > lastheight && adjustment <= color.upperbound)
                             {
                                 //Sample color texture
                                 Color currentcolor = color.bitmap.SampleColor(x, y);
 
-                                currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
+                                //currentcolor = ChangeColorBrightness(currentcolor, adjustment - lastheight);
 
                                 //Blend stuff to the lower "1/blend" of the color for the previous one
 
@@ -115,13 +119,13 @@ namespace TerrainGenerator
 
                                     float above_space = upperbound - adjustment;
 
-                                    if (above_space < (size))
+                                    if (above_space < size)
                                     {
                                         //We are in the lower quartile, so adjust the color towards the lower color
                                         var lowercolor = currentBiome.colors[idx - 1].bitmap;
 
                                         //The closer we are to the lower color, the more we should blend
-                                        float amount = (above_space) / (2 * size);
+                                        float amount = ((above_space) / (Form1.blend * size));
                                         currentcolor = Blend(currentcolor, lowercolor.SampleColor(x, y), amount);
                                     }
                                 }
@@ -153,8 +157,14 @@ namespace TerrainGenerator
 
             return Color.FromArgb(red, green, blue);
         }
+        const float softcap = 0.2f;
         public static Color ChangeColorBrightness(Color color, float correctionFactor)
         {
+            if (correctionFactor >= softcap) //Soft cap brightness modifier at 0.3f
+            {
+                correctionFactor = softcap + ((correctionFactor - softcap) / 1.1f*correctionFactor);
+            }
+
             float red = (float)color.R;
             float green = (float)color.G;
             float blue = (float)color.B;
