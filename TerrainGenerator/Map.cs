@@ -263,45 +263,198 @@ namespace TerrainGenerator
         }
     }
 
-    public class DetailArea
+    public class Circle_DetailArea
     {
         public Point location;
         public int lowestarea;
         public int highestarea;
 
-        public PointF[] points = new PointF[360]; //1 point per degrees
+        public float xstretch;
+        public float ystretch;
 
-        public DetailArea(int lowestarea, int highestarea)
+        public PointF[] points = new PointF[720]; //2 points per degrees
+
+        public Circle_DetailArea(int lowestarea, int highestarea, float xstretch, float ystretch)
         {
             this.lowestarea = lowestarea;
             this.highestarea = highestarea;
+            this.xstretch = xstretch;
+            this.ystretch = ystretch;
         }
         Random random = new Random();
         public void Generate()
         {
             double startradius = Math.Sqrt(((lowestarea+highestarea)/2)/Math.PI); //Circle area = pi*r^2, r = sqrt(area/pi)
-            for (int degrees = 0; degrees < 360; ++degrees)
+            double nextradius = startradius;
+            double lastradius = startradius;
+            for (double degrees = 0; degrees < 360; degrees+=(0.5))
             {
-                startradius = random.Next((int)(startradius/0.9f), (int)(startradius/1.1f)); //Add some vibration to the startradius
+                do
+                {
+                    double v = random.NextDouble();
+                    nextradius = lastradius * (((v - 0.5) / 25) + 1); //Add some vibration to the startradius
+                } while (nextradius < startradius * 0.9 || nextradius > startradius * 1.1);
                 
+                if (startradius == 0)
+                {
+
+                }
                 //Do a right angle triangle, where degrees = theta, and c = startradius
-                
+
                 //For x coordinate, we use adjacent side
-                //Cos(a/h)=theta
-                //a=h*arccos(theta)
-                double a = startradius*Math.Acos(DegToRad(startradius));
+                //a/h=cos(theta)
+                //a=h*cos(theta)
+                double radians = DegToRad(degrees);
+                double a = nextradius* Math.Cos(radians);
 
                 //For y coordinate, we use opposite side
-                //Sin(o/h)=theta
-                //o=h*arcsin(theta)
-                double o = startradius * Math.Asin(DegToRad(startradius));
-                points[degrees] = new PointF((float)a,(float)o);
+                //o/h=sin(theta)
+                //o=h*sin(theta)
+                double o = nextradius * Math.Sin(radians);
+
+                if (double.IsNaN(a) || double.IsNaN(o))
+                {
+
+                }
+                
+                points[(int)(degrees*2)] = new PointF(((float)a)*xstretch + location.X,((float)o)*ystretch + location.Y);
+                lastradius = nextradius;
             }
         }
 
         private static double DegToRad(double deg)
         {
             return deg * (Math.PI / 180);
+        }
+    }
+    public class Direction_DetailArea
+    {
+        public List<Point> visitedpoints;
+        public float radius;
+        public List<PointF> points = new List<PointF>();
+
+        public Direction_DetailArea(List<Point> visitedpoints, float radius)
+        {
+            this.visitedpoints = visitedpoints.Copy();
+            this.radius = radius;
+        }
+
+        public void Generate()
+        {
+            visitedpoints = visitedpoints.OrderBy(p=>p.Y).ToList();
+            //Generate vectors
+            
+
+
+
+            for (int i = 0; i < visitedpoints.Count; ++i)
+            {
+                Point v = visitedpoints[i];
+                points.Add(new PointF(v.X + radius, v.Y));
+                if (i == visitedpoints.Count() - 1)
+                {
+                    points.Add(new PointF(v.X, v.Y + radius));
+                }
+            }
+            for (int i = visitedpoints.Count - 1; i >= 0; --i)
+            {
+                Point v = visitedpoints[i];
+                points.Add(new PointF(v.X - radius, v.Y));
+                if (i == 0)
+                {
+                    points.Add(new PointF(v.X, v.Y-radius));
+                }
+            }
+        }
+    }
+
+    public class Vector
+    {
+        public double i;
+        public double j;
+
+        public PointF A;
+        public PointF B; //Where vector = ->
+                         //               AB
+        private YMC_VectorLine vectorLine;
+        public Vector(double i, double j)
+        {
+            this.i = i;
+            this.j = j;
+        }
+
+        public Vector(PointF A, PointF B)
+        {
+            this.A = A;
+            this.B = B;
+
+            i = A.X-B.X;
+            j = A.Y-B.Y;
+
+            //Generate ymc vectorline
+            //Convert into a y = mx + c equation
+            //Step one, convert into ai + bj + t(ci + dj)
+            //AB = A + t(b-a)
+            var b_minus_a = new PointF(B.X - A.X, B.Y - A.Y);
+            //r = (a+ct)i + (b+dt)j
+
+            //a+ct = x
+            //x - a = ct
+            //t = x-a/c
+
+            //y = b + d((x-a)/c)
+            //y = d (x-a)/c
+            
+            vectorLine = new YMC_VectorLine(A.X, A.Y, b_minus_a.X, b_minus_a.Y);
+        }
+
+        public Vector GetPerpindicular()
+        {
+            //Find a new vector where i*a + j*b == 0
+            return new Vector(-j, i).GetUnitVector();
+        }
+        public Vector GetUnitVector()
+        {
+            //Unit vector = v/|v|
+            double magnitude = Math.Sqrt(i * i + j * j);
+            return new Vector(i/magnitude,j/magnitude);
+        }
+
+        public bool PointOnLine(PointF point)
+        {
+            //Convert into a y = mx + c equation
+            //Step one, convert into ai + bj + t(ci + dj)
+
+            //Can only be done if two seperate points are given, where our 'point' is within the bounds
+            RectangleF bounds = new RectangleF(A, new SizeF(B.X, B.Y));
+            if (A == B || !bounds.Contains(point)) //A, B start as 0,0 so if no points are given still returns false
+            {
+                return false;
+            }
+
+            return vectorLine.PointOnLine(point.X, point.Y);
+        }
+    }
+
+    public class YMC_VectorLine
+    {
+        public double a;
+        public double b;
+        public double c;
+        public double d; //y = b + d((x-a)/c)
+
+        public YMC_VectorLine(double a, double b, double c, double d)
+        {
+            this.a = a;
+            this.b = b;
+            this.c = c;
+            this.d = d;
+        }
+
+        public bool PointOnLine(double x, double y)
+        {
+            //y = b + d((x-a)/c)
+            return (b + d * ((x - a) / c) == y;
         }
     }
 }

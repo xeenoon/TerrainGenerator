@@ -164,6 +164,15 @@ namespace TerrainGenerator
         }
         private void button1_Click(object sender, EventArgs e)
         {
+            result = new Bitmap(Width, Height);
+            //Circle_DetailArea detailArea = new Circle_DetailArea(30000,50000, 2, 1);
+            //detailArea.location = new Point(Width/2, Height/2);
+
+            Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() {new Point(200,200), new Point(200,300), new Point(400,540)}, 100);
+            detailArea.Generate();
+            Graphics.FromImage(result).FillPolygon(new Pen(Color.Green).Brush,detailArea.points.ToArray());
+            Invalidate();
+            return;
             size = int.Parse(textBox2.Text);
             zoom = int.Parse(textBox1.Text);
             blend = float.Parse(textBox3.Text);

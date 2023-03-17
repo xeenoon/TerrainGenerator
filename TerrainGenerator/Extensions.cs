@@ -18,6 +18,15 @@ namespace TerrainGenerator
             }
             return result;
         }
+        public static List<T> Copy<T>(this List<T> _m)
+        {
+            List<T> result = new List<T>();
+            foreach (var item in _m)
+            {
+                result.Add(item);
+            }
+            return result;
+        }
 
 
         public static Color SampleColor(this BMP bmp, int x, int y)
