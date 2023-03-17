@@ -333,6 +333,8 @@ namespace TerrainGenerator
         public float radius;
         public List<PointF> points = new List<PointF>();
 
+        Random random = new Random();
+
         public Direction_DetailArea(List<Point> visitedpoints, float radius)
         {
             this.visitedpoints = visitedpoints.Copy();
@@ -341,30 +343,52 @@ namespace TerrainGenerator
 
         public void Generate()
         {
-            visitedpoints = visitedpoints.OrderBy(p=>p.Y).ToList();
             //Generate vectors
-            
 
+            List<Vector> placementVectors = new List<Vector>();
 
-
-            for (int i = 0; i < visitedpoints.Count; ++i)
+            for (int i = 1; i < visitedpoints.Count; ++i)
             {
-                Point v = visitedpoints[i];
-                points.Add(new PointF(v.X + radius, v.Y));
-                if (i == visitedpoints.Count() - 1)
+                placementVectors.Add(new Vector(visitedpoints[i-1], visitedpoints[i]));
+           }
+
+            List<PointF> leftpoints = new List<PointF>();
+            List<PointF> rightpoints = new List<PointF>();
+
+
+            PointF location = new PointF(visitedpoints.OrderBy(v => v.X).First().X, visitedpoints.OrderBy(v => v.Y).First().Y);
+            var bounds = new RectangleF(location, new SizeF(visitedpoints.OrderByDescending(v => v.X).First().X-location.X, visitedpoints.OrderByDescending(v => v.Y).First().Y-location.Y));
+            double lastradius = radius;
+            double nextradius;
+
+            for (float x = (int)bounds.Left; x <= bounds.Right; x+=0.5f)
+            {
+                for (float y = (int)bounds.Top; y <= bounds.Bottom; y+=0.5f)
                 {
-                    points.Add(new PointF(v.X, v.Y + radius));
+                    if (x == 250 && y == 250)
+                    {
+
+                    }
+                    foreach (var vector in placementVectors)
+                    {
+                        if (vector.PointOnLine(new PointF(x,y)))
+                        {
+                            do
+                            {
+                                double v = random.NextDouble();
+                                nextradius = lastradius * (((v - 0.5) / 25) + 1); //Add some vibration to the startradius
+                            } while (nextradius < radius * 0.9 || nextradius > radius * 1.1);
+
+                            leftpoints.Add(new PointF( (float)(x- nextradius), y));
+                            rightpoints.Add(new PointF((float)(x+ nextradius), y));
+                            lastradius = nextradius;
+                            break;
+                        }
+                    }
                 }
             }
-            for (int i = visitedpoints.Count - 1; i >= 0; --i)
-            {
-                Point v = visitedpoints[i];
-                points.Add(new PointF(v.X - radius, v.Y));
-                if (i == 0)
-                {
-                    points.Add(new PointF(v.X, v.Y-radius));
-                }
-            }
+            rightpoints.Reverse();
+            points = leftpoints.OrderBy(l=>l.Y).Concat(rightpoints.OrderByDescending(l=>l.Y)).ToList();
         }
     }
 
@@ -388,8 +412,8 @@ namespace TerrainGenerator
             this.A = A;
             this.B = B;
 
-            i = A.X-B.X;
-            j = A.Y-B.Y;
+            i = B.X - A.X;
+            j = B.Y - A.Y;
 
             //Generate ymc vectorline
             //Convert into a y = mx + c equation
@@ -426,7 +450,7 @@ namespace TerrainGenerator
             //Step one, convert into ai + bj + t(ci + dj)
 
             //Can only be done if two seperate points are given, where our 'point' is within the bounds
-            RectangleF bounds = new RectangleF(A, new SizeF(B.X, B.Y));
+            RectangleF bounds = new RectangleF(new PointF(A.X < B.X ? A.X : B.X, A.Y < B.Y ? A.Y : B.Y), new SizeF(Math.Abs(B.X-A.X), Math.Abs(B.Y-A.Y)));
             if (A == B || !bounds.Contains(point)) //A, B start as 0,0 so if no points are given still returns false
             {
                 return false;
@@ -454,7 +478,7 @@ namespace TerrainGenerator
         public bool PointOnLine(double x, double y)
         {
             //y = b + d((x-a)/c)
-            return (b + d * ((x - a) / c) == y;
+            return b + d * ((x - a) / c) == y;
         }
     }
 }
