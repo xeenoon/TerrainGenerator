@@ -168,9 +168,11 @@ namespace TerrainGenerator
             //Circle_DetailArea detailArea = new Circle_DetailArea(30000,50000, 2, 1);
             //detailArea.location = new Point(Width/2, Height/2);
 
-            Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() {new Point(100,100), new Point(120,150), new Point(100,200), new Point(150, 220), new Point(200, 250), new Point(150, 270), new Point(100, 300) }, 100);
-            detailArea.Generate();
-            Graphics.FromImage(result).FillPolygon(new Pen(Color.Green).Brush,detailArea.points.ToArray());
+            //Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() {new Point(100,100), new Point(120,150), new Point(100,200), new Point(150, 220), new Point(200, 250), new Point(150, 270), new Point(100, 300) }, 10,Width, Height);
+            Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() { new Point(100, 100), new Point(120, 150) },50,Width,Height);
+            //detailArea.Generate();
+            detailArea.DrawPoints(Graphics.FromImage(result));
+            //Graphics.FromImage(result).FillPolygon(new Pen(Color.Green).Brush,detailArea.points.ToArray());
             Invalidate();
             return;
             size = int.Parse(textBox2.Text);

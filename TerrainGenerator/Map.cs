@@ -7,6 +7,9 @@ using System.Text;
 using System.Threading.Tasks;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.Window;
 using System.Windows.Media.Media3D;
+using System.Security.Cryptography.X509Certificates;
+using System.Drawing;
+using System.Windows.Media.TextFormatting;
 
 namespace TerrainGenerator
 {
@@ -330,27 +333,29 @@ namespace TerrainGenerator
     public class Direction_DetailArea
     {
         public List<Point> visitedpoints;
+        private List<Vector> placementVectors = new List<Vector>();
+
         public float radius;
         public List<PointF> points = new List<PointF>();
 
+        public float[,] heightmap;
+
         Random random = new Random();
 
-        public Direction_DetailArea(List<Point> visitedpoints, float radius)
+        public Direction_DetailArea(List<Point> visitedpoints, float radius, int maxwidth, int maxheight)
         {
             this.visitedpoints = visitedpoints.Copy();
             this.radius = radius;
+            heightmap = new float[maxwidth,maxheight];
         }
 
         public void Generate()
         {
             //Generate vectors
-
-            List<Vector> placementVectors = new List<Vector>();
-
             for (int i = 1; i < visitedpoints.Count; ++i)
             {
                 placementVectors.Add(new Vector(visitedpoints[i-1], visitedpoints[i]));
-           }
+            }
 
             List<PointF> leftpoints = new List<PointF>();
             List<PointF> rightpoints = new List<PointF>();
@@ -359,36 +364,120 @@ namespace TerrainGenerator
             PointF location = new PointF(visitedpoints.OrderBy(v => v.X).First().X, visitedpoints.OrderBy(v => v.Y).First().Y);
             var bounds = new RectangleF(location, new SizeF(visitedpoints.OrderByDescending(v => v.X).First().X-location.X, visitedpoints.OrderByDescending(v => v.Y).First().Y-location.Y));
             double lastradius = radius;
-            double nextradius;
+            double nextradius = lastradius;
 
-            for (float x = (int)bounds.Left; x <= bounds.Right; x+=0.5f)
+            foreach (var vector in placementVectors)
             {
-                for (float y = (int)bounds.Top; y <= bounds.Bottom; y+=0.5f)
+                points.AddRange(GetPoints(ref lastradius, ref nextradius, vector, true));
+            }
+            //Now do the same thing, but backwards
+            placementVectors.Reverse();
+            foreach (var vector in placementVectors)
+            {
+                points.AddRange(GetPoints(ref lastradius, ref nextradius, vector, false));
+            }
+            placementVectors.Reverse();
+
+            
+            //points = leftpoints.OrderBy(l=>l.Y).Concat(rightpoints.OrderByDescending(l=>l.Y)).ToList();
+        }
+        public void DrawPoints(Graphics g)
+        {
+            Generate();
+
+            Pen vectorpen = new Pen(Color.Red);
+            Pen dotpen = new Pen(Color.Green);
+            Pen greyscalepen = new Pen(Color.Black);
+
+            foreach (var vector in placementVectors)
+            {
+                g.DrawLine(vectorpen, vector.A, vector.B);
+            }
+            foreach (var point in points)
+            {
+                g.FillRectangle(dotpen.Brush, point.X, point.Y, 1, 1);
+            }
+
+            int highestx = (int)points.OrderByDescending(p => p.X).FirstOrDefault().X;
+            int highesty = (int)points.OrderByDescending(p => p.X).FirstOrDefault().Y;
+
+            for (int x = 0; x < highestx; ++x)
+            {
+                for (int y = 0; y < highesty; ++y)
                 {
-                    if (x == 250 && y == 250)
+                    if (heightmap[x,y] == 1)
                     {
-
-                    }
-                    foreach (var vector in placementVectors)
-                    {
-                        if (vector.PointOnLine(new PointF(x,y)))
-                        {
-                            do
-                            {
-                                double v = random.NextDouble();
-                                nextradius = lastradius * (((v - 0.5) / 25) + 1); //Add some vibration to the startradius
-                            } while (nextradius < radius * 0.9 || nextradius > radius * 1.1);
-
-                            leftpoints.Add(new PointF( (float)(x- nextradius), y));
-                            rightpoints.Add(new PointF((float)(x+ nextradius), y));
-                            lastradius = nextradius;
-                            break;
-                        }
+                        g.FillRectangle(greyscalepen.Brush, x, y, 1, 1);
                     }
                 }
             }
-            rightpoints.Reverse();
-            points = leftpoints.OrderBy(l=>l.Y).Concat(rightpoints.OrderByDescending(l=>l.Y)).ToList();
+        }
+
+        private List<PointF> GetPoints(ref double lastradius, ref double nextradius, Vector vector, bool fowards)
+        {
+            double start;
+            double end;
+
+            if (fowards) //Moving fowards?
+            {
+                start = vector.A.X;
+                end = vector.B.X;
+            }
+            else
+            {
+                start = vector.B.X;
+                end = vector.A.X;
+            }
+            List<PointF> result = new List<PointF>();
+            double change = start < end ? 0.5 : -0.5;
+
+            for (double x = start; start < end ? x <= end : x >= end; x += change)
+            {
+                //Go left to right on the vector and add points for this vector
+                double y = vector.GetPoint(x);
+
+                do
+                {
+                    double v = random.NextDouble();
+                    nextradius = lastradius * (((v - 0.5) / 25) + 1); //Add some vibration to the startradius
+                } while (nextradius < radius * 0.9 || nextradius > radius * 1.1);
+
+                //Get the vector perpindicular to this vector
+
+                var scaled = vector.GetPerpindicular();
+                scaled = scaled.GetUnitVector();
+                scaled = scaled * nextradius;
+
+                PointF p_start = new PointF((float)(x + scaled.i), (float)(y + scaled.j));
+                PointF p_end = new PointF((float)(x - scaled.i), (float)(y - scaled.j));
+
+                var start2 = x + scaled.i;
+                var end2   = x - scaled.i;
+
+
+                double change2 = start2 < end2 ? 1 : -1;
+
+                Vector vector2 = new Vector(p_start, p_end);
+
+                for (double x2 = start2; start2 < end2 ? x2 < end2 : x2 > end2; x2 += change2)
+                {
+                    //Add the depth of the vector to the mountain
+                    var y2 = vector2.GetPoint(x2);
+
+                    heightmap[(int)x2, (int)y2] = 1;
+                }
+
+                if (fowards)
+                {
+                    result.Add(new PointF((float)(x + scaled.i), (float)(y + scaled.j)));
+                }
+                else
+                {
+                    result.Add(new PointF((float)(x - scaled.i), (float)(y - scaled.j)));
+                }
+                lastradius = nextradius;
+            }
+            return result;
         }
     }
 
@@ -399,12 +488,30 @@ namespace TerrainGenerator
 
         public PointF A;
         public PointF B; //Where vector = ->
-                         //               AB
+        internal double angle //Is in radians
+        {
+            //theta = arctan(j/i)
+            get
+            {
+                return Math.Atan(j/i);
+            }
+        }
+
+        //               AB
         private YMC_VectorLine vectorLine;
         public Vector(double i, double j)
         {
             this.i = i;
             this.j = j;
+        }
+
+        public static Vector operator *(Vector a, double s)
+        {
+            return new Vector(a.i*s, a.j*s);
+        }
+        public static Vector operator /(Vector a, double s)
+        {
+            return new Vector(a.i / s, a.j / s);
         }
 
         public Vector(PointF A, PointF B)
@@ -435,7 +542,7 @@ namespace TerrainGenerator
         public Vector GetPerpindicular()
         {
             //Find a new vector where i*a + j*b == 0
-            return new Vector(-j, i).GetUnitVector();
+            return new Vector(-j, i);
         }
         public Vector GetUnitVector()
         {
@@ -458,6 +565,11 @@ namespace TerrainGenerator
 
             return vectorLine.PointOnLine(point.X, point.Y);
         }
+
+        internal double GetPoint(double x)
+        {
+            return vectorLine.Substitute(x);
+        }
     }
 
     public class YMC_VectorLine
@@ -479,6 +591,10 @@ namespace TerrainGenerator
         {
             //y = b + d((x-a)/c)
             return b + d * ((x - a) / c) == y;
+        }
+        public double Substitute(double x)
+        {
+            return b + d * ((x - a) / c);
         }
     }
 }
