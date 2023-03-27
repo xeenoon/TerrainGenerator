@@ -330,7 +330,7 @@ namespace TerrainGenerator
         public float radius;
         public List<PointF> points = new List<PointF>();
 
-        public float[,] heightmap;
+        public float[][] heightmap;
 
         Random random = new Random();
 
@@ -338,7 +338,7 @@ namespace TerrainGenerator
         {
             this.visitedpoints = visitedpoints.Copy();
             this.radius = radius;
-            heightmap = new float[maxwidth,maxheight];
+            heightmap = PerlinNoise.GetEmptyArray<float>(maxwidth, maxheight);
         }
 
         public void Generate()
@@ -382,9 +382,19 @@ namespace TerrainGenerator
             {
                 for (float y = centre.Y - radius; y < centre.Y + radius; ++y)
                 {
-                    if (new PointF(x,y).DistanceTo(centre) < radius)
+                    double distance = new PointF(x, y).DistanceTo(centre);
+                    if (distance < radius)
                     {
-                        heightmap[(int)x,(int)y]=1;
+                        // (radius-distance)/radius+0.3 is formula
+                        var height = (radius - distance) / radius + 0.3f;
+                        if (height > 1)
+                        {
+                            height = 1;
+                        }
+                        if (heightmap[(int)x][(int)y] <= height)
+                        {
+                            heightmap[(int)x][(int)y] = (float)height;
+                        }
                     }
                 }
             }
@@ -406,19 +416,27 @@ namespace TerrainGenerator
             {
                 g.FillRectangle(dotpen.Brush, point.X, point.Y, 1, 1);
             }
+        }
 
+        public void GenerateGradient(Graphics g)
+        {
+            Generate();
             //Smoothe with perlin noise
 
-            int highestx = (int)(points.OrderByDescending(p => p.X).FirstOrDefault().X+radius);
-            int highesty = (int)(points.OrderByDescending(p => p.Y).FirstOrDefault().Y+radius);
+            int highestx = (int)(points.OrderByDescending(p => p.X).FirstOrDefault().X + radius);
+            int highesty = (int)(points.OrderByDescending(p => p.Y).FirstOrDefault().Y + radius);
+
+            heightmap = PerlinNoise.GeneratePerlinNoise(heightmap, 5);
 
             for (int x = 0; x < highestx; ++x)
             {
                 for (int y = 0; y < highesty; ++y)
                 {
-                    if (heightmap[x,y] >= 0)
+                    if (heightmap[x][y] >= 0)
                     {
-                        g.FillRectangle(greyscalepen.Brush, x, y, 1, 1);
+                        var color = (int)(heightmap[x][y] * 255);
+                        var pen = new Pen(Color.FromArgb(color, color, color));
+                        g.FillRectangle(pen.Brush, x, y, 1, 1);
                     }
                 }
             }
@@ -440,7 +458,7 @@ namespace TerrainGenerator
                 end = vector.A.X;
             }
             List<PointF> result = new List<PointF>();
-            double change = start < end ? 0.5 : -0.5;
+            double change = start < end ? 0.1 : -0.1;
 
             for (double x = start; start < end ? x <= end : x >= end; x += change)
             {
@@ -466,7 +484,7 @@ namespace TerrainGenerator
                 var end2   = x - scaled.i;
 
 
-                double change2 = start2 < end2 ? 1 : -1;
+                double change2 = start2 < end2 ? 0.1 : -0.1;
 
                 Vector vector2 = new Vector(p_start, p_end);
 
@@ -474,8 +492,17 @@ namespace TerrainGenerator
                 {
                     //Add the depth of the vector to the mountain
                     var y2 = vector2.GetPoint(x2);
+                    // (radius-distance)/radius+0.3 is formula
+                    var height = (nextradius - new PointF((float)x2, (float)y2).DistanceTo(new PointF((float)x, (float)y))) / nextradius + 0.3f;
+                    if (height > 1)
+                    {
+                        height = 1;
+                    }
 
-                    heightmap[(int)x2, (int)y2] = 1;
+                    if (heightmap[(int)x2][(int)y2] <= height)
+                    {
+                        heightmap[(int)x2][(int)y2] = (float)height;
+                    }
                 }
 
                 if (fowards)

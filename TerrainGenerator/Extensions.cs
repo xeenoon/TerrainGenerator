@@ -52,5 +52,17 @@ namespace TerrainGenerator
         {
             return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
+        public static float[][] Average(this float[][] arry, float[][] comparer, int maxx, int maxy)
+        {
+            float[][] result = PerlinNoise.GetEmptyArray<float>(maxx, maxy);
+            for (int x = 0; x < maxx; ++x)
+            {
+                for (int y = 0; y < maxy; ++y)
+                {
+                    result[x][y] = (arry[x][y] + comparer[x][y])/2f;
+                }
+            }
+            return result;
+        }
     }
 }
