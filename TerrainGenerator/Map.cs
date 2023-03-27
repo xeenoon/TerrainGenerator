@@ -38,7 +38,7 @@ namespace TerrainGenerator
 
             for (int i = 0; i < biomes.Length; ++i)
             {
-                double distance = DistanceBetweenPoints(point, biomes[i].point);
+                double distance = point.DistanceTo(biomes[i].point);
                 if (distance < lastdistance) //Closest to this biome
                 {
                     closestbiome = biomes[i];
@@ -46,10 +46,6 @@ namespace TerrainGenerator
                 }
             }
             return closestbiome;
-        }
-        double DistanceBetweenPoints(Point p1, Point p2)
-        {
-            return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
         }
 
         Random random = new Random();
@@ -254,15 +250,11 @@ namespace TerrainGenerator
 
         public bool PointInCircle(Point point)
         {
-            return DistanceBetweenPoints(point, new Point(radius, radius)) < radius;
+            return point.DistanceTo(new Point(radius, radius)) < radius;
         }
         public bool InCircleBorder(Point point)
         {
-            return DistanceBetweenPoints(point, new Point(radius, radius)) < (radius + 10);
-        }
-        double DistanceBetweenPoints(Point p1, Point p2)
-        {
-            return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
+            return point.DistanceTo(new Point(radius, radius)) < (radius + 10);
         }
     }
 
@@ -369,6 +361,8 @@ namespace TerrainGenerator
             foreach (var vector in placementVectors)
             {
                 points.AddRange(GetPoints(ref lastradius, ref nextradius, vector, true));
+                FillCircle(vector.A, radius);
+                FillCircle(vector.B, radius);
             }
             //Now do the same thing, but backwards
             placementVectors.Reverse();
@@ -381,6 +375,21 @@ namespace TerrainGenerator
             
             //points = leftpoints.OrderBy(l=>l.Y).Concat(rightpoints.OrderByDescending(l=>l.Y)).ToList();
         }
+
+        private void FillCircle(PointF centre, float radius)
+        {
+            for (float x = centre.X - radius; x < centre.X + radius; ++x)
+            {
+                for (float y = centre.Y - radius; y < centre.Y + radius; ++y)
+                {
+                    if (new PointF(x,y).DistanceTo(centre) < radius)
+                    {
+                        heightmap[(int)x,(int)y]=1;
+                    }
+                }
+            }
+        }
+
         public void DrawPoints(Graphics g)
         {
             Generate();
@@ -398,14 +407,16 @@ namespace TerrainGenerator
                 g.FillRectangle(dotpen.Brush, point.X, point.Y, 1, 1);
             }
 
-            int highestx = (int)points.OrderByDescending(p => p.X).FirstOrDefault().X;
-            int highesty = (int)points.OrderByDescending(p => p.X).FirstOrDefault().Y;
+            //Smoothe with perlin noise
+
+            int highestx = (int)(points.OrderByDescending(p => p.X).FirstOrDefault().X+radius);
+            int highesty = (int)(points.OrderByDescending(p => p.Y).FirstOrDefault().Y+radius);
 
             for (int x = 0; x < highestx; ++x)
             {
                 for (int y = 0; y < highesty; ++y)
                 {
-                    if (heightmap[x,y] == 1)
+                    if (heightmap[x,y] >= 0)
                     {
                         g.FillRectangle(greyscalepen.Brush, x, y, 1, 1);
                     }

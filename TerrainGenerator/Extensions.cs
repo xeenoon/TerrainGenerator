@@ -43,5 +43,14 @@ namespace TerrainGenerator
             }
             return bmp.GetPixel(adjusted_x, adjusted_y);
         }
+
+        public static double DistanceTo(this PointF p1, PointF p2)
+        {
+            return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
+        }
+        public static double DistanceTo(this Point p1, Point p2)
+        {
+            return Math.Sqrt(Math.Pow((p2.X - p1.X), 2) + Math.Pow(p2.Y - p1.Y, 2));
+        }
     }
 }
