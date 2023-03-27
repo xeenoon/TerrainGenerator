@@ -459,7 +459,7 @@ namespace TerrainGenerator
 
                 Vector vector2 = new Vector(p_start, p_end);
 
-                for (double x2 = start2; start2 < end2 ? x2 < end2 : x2 > end2; x2 += change2)
+                for (double x2 = start2; start2 < end2 ? x2 <= end2 : x2 >= end2; x2 += change2)
                 {
                     //Add the depth of the vector to the mountain
                     var y2 = vector2.GetPoint(x2);
@@ -469,11 +469,13 @@ namespace TerrainGenerator
 
                 if (fowards)
                 {
-                    result.Add(new PointF((float)(x + scaled.i), (float)(y + scaled.j)));
+                    result.Add(new PointF((float)(p_start.X), (float)(vector2.GetPoint(p_start.X))));
+                    //result.Add(new PointF((float)(x + scaled.i), (float)(y + scaled.j)));
                 }
                 else
                 {
-                    result.Add(new PointF((float)(x - scaled.i), (float)(y - scaled.j)));
+                    result.Add(new PointF((float)(p_end.X), (float)(vector2.GetPoint(p_end.X))));
+                    //result.Add(new PointF((float)(x - scaled.i), (float)(y - scaled.j)));
                 }
                 lastradius = nextradius;
             }
