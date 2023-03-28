@@ -325,7 +325,6 @@ namespace TerrainGenerator
     public class Direction_DetailArea
     {
         public List<Point> visitedpoints;
-        private List<Vector> placementVectors = new List<Vector>();
 
         public float radius;
         public List<PointF> points = new List<PointF>();
@@ -334,16 +333,22 @@ namespace TerrainGenerator
 
         Random random = new Random();
 
+        private int maxwidth;
+        private int maxheight;
+
         public Direction_DetailArea(List<Point> visitedpoints, float radius, int maxwidth, int maxheight)
         {
             this.visitedpoints = visitedpoints.Copy();
             this.radius = radius;
             heightmap = PerlinNoise.GetEmptyArray<float>(maxwidth, maxheight);
+            this.maxheight = maxheight;
+            this.maxwidth = maxwidth;
         }
 
         public void Generate()
         {
             //Generate vectors
+            List<Vector> placementVectors = new List<Vector>();
             for (int i = 1; i < visitedpoints.Count; ++i)
             {
                 placementVectors.Add(new Vector(visitedpoints[i-1], visitedpoints[i]));
@@ -360,20 +365,10 @@ namespace TerrainGenerator
 
             foreach (var vector in placementVectors)
             {
-                points.AddRange(GetPoints(ref lastradius, ref nextradius, vector, true));
+                FillVector(vector);
                 FillCircle(vector.A, radius);
                 FillCircle(vector.B, radius);
             }
-            //Now do the same thing, but backwards
-            placementVectors.Reverse();
-            foreach (var vector in placementVectors)
-            {
-                points.AddRange(GetPoints(ref lastradius, ref nextradius, vector, false));
-            }
-            placementVectors.Reverse();
-
-            
-            //points = leftpoints.OrderBy(l=>l.Y).Concat(rightpoints.OrderByDescending(l=>l.Y)).ToList();
         }
 
         private void FillCircle(PointF centre, float radius)
@@ -399,40 +394,18 @@ namespace TerrainGenerator
                 }
             }
         }
-
-        public void DrawPoints(Graphics g)
-        {
-            Generate();
-
-            Pen vectorpen = new Pen(Color.Red);
-            Pen dotpen = new Pen(Color.Green);
-            Pen greyscalepen = new Pen(Color.Black);
-
-            foreach (var vector in placementVectors)
-            {
-                g.DrawLine(vectorpen, vector.A, vector.B);
-            }
-            foreach (var point in points)
-            {
-                g.FillRectangle(dotpen.Brush, point.X, point.Y, 1, 1);
-            }
-        }
-
         public void GenerateGradient(Graphics g)
         {
             Generate();
             //Smoothe with perlin noise
-
-            int highestx = (int)(points.OrderByDescending(p => p.X).FirstOrDefault().X + radius);
-            int highesty = (int)(points.OrderByDescending(p => p.Y).FirstOrDefault().Y + radius);
-
+            
             heightmap = PerlinNoise.GeneratePerlinNoise(heightmap, 5);
 
-            for (int x = 0; x < highestx; ++x)
+            for (int x = 0; x < maxwidth; ++x)
             {
-                for (int y = 0; y < highesty; ++y)
+                for (int y = 0; y < maxheight; ++y)
                 {
-                    if (heightmap[x][y] >= 0)
+                    if (heightmap[x][y] > 0)
                     {
                         var color = (int)(heightmap[x][y] * 255);
                         var pen = new Pen(Color.FromArgb(color, color, color));
@@ -442,29 +415,22 @@ namespace TerrainGenerator
             }
         }
 
-        private List<PointF> GetPoints(ref double lastradius, ref double nextradius, Vector vector, bool fowards)
+        private void FillVector(Vector vector)
         {
             double start;
             double end;
-
-            if (fowards) //Moving fowards?
-            {
-                start = vector.A.X;
-                end = vector.B.X;
-            }
-            else
-            {
-                start = vector.B.X;
-                end = vector.A.X;
-            }
-            List<PointF> result = new List<PointF>();
+            
+            start = vector.A.X;
+            end = vector.B.X;
+            
             double change = start < end ? 0.1 : -0.1;
 
+            double nextradius = radius;
+            double lastradius = radius;
             for (double x = start; start < end ? x <= end : x >= end; x += change)
             {
                 //Go left to right on the vector and add points for this vector
                 double y = vector.GetPoint(x);
-
                 do
                 {
                     double v = random.NextDouble();
@@ -482,7 +448,6 @@ namespace TerrainGenerator
 
                 var start2 = x + scaled.i;
                 var end2   = x - scaled.i;
-
 
                 double change2 = start2 < end2 ? 0.1 : -0.1;
 
@@ -504,20 +469,8 @@ namespace TerrainGenerator
                         heightmap[(int)x2][(int)y2] = (float)height;
                     }
                 }
-
-                if (fowards)
-                {
-                    result.Add(new PointF((float)(p_start.X), (float)(vector2.GetPoint(p_start.X))));
-                    //result.Add(new PointF((float)(x + scaled.i), (float)(y + scaled.j)));
-                }
-                else
-                {
-                    result.Add(new PointF((float)(p_end.X), (float)(vector2.GetPoint(p_end.X))));
-                    //result.Add(new PointF((float)(x - scaled.i), (float)(y - scaled.j)));
-                }
                 lastradius = nextradius;
             }
-            return result;
         }
     }
 
