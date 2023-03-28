@@ -414,6 +414,64 @@ namespace TerrainGenerator
                 }
             }
         }
+        public void GenerateDetails(Graphics g, Biome data)
+        {
+            Generate();
+            //Smoothe with perlin noise
+
+            heightmap = PerlinNoise.GeneratePerlinNoise(heightmap, 5);
+
+            for (int x = 0; x < maxwidth; ++x)
+            {
+                for (int y = 0; y < maxheight; ++y)
+                {
+                    var height = heightmap[x][y];
+                    for (int idx = 0; idx < data.colors.Count; idx++)
+                    {
+                        BiomeLayerData? color = data.colors[idx];
+                        if (height > 0.7)
+                        {
+
+                        }
+                        if (height > 0 && height <= color.upperbound)
+                        {
+                            var currentcolor = color.bitmap.SampleColor(x, y);
+                            if (idx == 0) 
+                            {
+                                //Dont do any blending
+                                g.FillRectangle(new Pen(currentcolor).Brush, x, y, 1, 1);
+                                break;
+                            }
+                            float upperbound = color.upperbound;
+                            float lowerbound = data.colors[idx - 1].upperbound;
+                            float size = upperbound - lowerbound;
+
+                            float above_space = upperbound - height;
+
+                            if (above_space < (size))
+                            {
+                                //We are in the lower quartile, so adjust the color towards the lower color
+                                var lowercolor = data.colors[idx - 1].bitmap;
+
+                                //The closer we are to the lower color, the more we should blend
+                                float amount = (above_space) / (2 * size);
+                                currentcolor = currentcolor.Blend(lowercolor.SampleColor(x, y), amount);
+                            }
+
+                            g.FillRectangle(new Pen(currentcolor).Brush, x, y, 1, 1);
+                            break;
+                        }
+                    }
+
+                //    if (heightmap[x][y] > 0)
+                //    {
+                //        var color = (int)(heightmap[x][y] * 255);
+                //        var pen = new Pen(Color.FromArgb(color, color, color));
+                //        g.FillRectangle(pen.Brush, x, y, 1, 1);
+                //    }
+                }
+            }
+        }
 
         private void FillVector(Vector vector)
         {

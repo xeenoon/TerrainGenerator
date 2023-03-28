@@ -64,5 +64,18 @@ namespace TerrainGenerator
             }
             return result;
         }
+        public static Color Blend(this Color color, Color backColor, double amount)
+        {
+            if (amount <= 0)
+            {
+
+            }
+
+            byte red = (byte)(((color.R * (1 - amount)) + (backColor.R * amount)));
+            byte green = (byte)(((color.G * (1 - amount)) + (backColor.G * amount)));
+            byte blue = (byte)(((color.B * (1 - amount)) + (backColor.B * amount)));
+
+            return Color.FromArgb(red, green, blue);
+        }
     }
 }
