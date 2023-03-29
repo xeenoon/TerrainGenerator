@@ -10,6 +10,9 @@ using System.Windows.Media.Media3D;
 using System.Security.Cryptography.X509Certificates;
 using System.Drawing;
 using System.Windows.Media.TextFormatting;
+using Microsoft.VisualBasic.ApplicationServices;
+using System.Numerics;
+using System.Runtime.Intrinsics;
 
 namespace TerrainGenerator
 {
@@ -317,7 +320,7 @@ namespace TerrainGenerator
             }
         }
 
-        private static double DegToRad(double deg)
+        public static double DegToRad(double deg)
         {
             return deg * (Math.PI / 180);
         }
@@ -339,12 +342,21 @@ namespace TerrainGenerator
             return result;
         }
     }
+    public class DetailAreaPoint
+    {
+        public PointF p;
+        public float radius;
+
+        public DetailAreaPoint(float x, float y, float radius)
+        {
+            this.p = new PointF(x,y);
+            this.radius = radius;
+        }
+    }
     public class Direction_DetailArea
     {
-        public List<Point> visitedpoints;
+        public List<DetailAreaPoint> visitedpoints;
 
-        public float inner_radius;
-        public float outer_radius;
         public List<PointF> points = new List<PointF>();
 
         public float[][] heightmap;
@@ -354,12 +366,10 @@ namespace TerrainGenerator
         private int maxwidth;
         private int maxheight;
 
-        public Direction_DetailArea(List<Point> visitedpoints, float inner_radius, float outer_radius, int maxwidth, int maxheight)
+        public Direction_DetailArea(List<DetailAreaPoint> visitedpoints, int maxwidth, int maxheight)
         {
             this.visitedpoints = visitedpoints.Copy();
-            this.inner_radius = inner_radius;
-            this.outer_radius = outer_radius;
-
+            
             heightmap = PerlinNoise.GetEmptyArray<float>(maxwidth, maxheight);
             this.maxheight = maxheight;
             this.maxwidth = maxwidth;
@@ -367,68 +377,63 @@ namespace TerrainGenerator
 
         public void Generate()
         {
-            //Generate vectors
-            List<Vector> placementVectors = new List<Vector>();
-            for (int i = 1; i < visitedpoints.Count; ++i)
+            //PointF location = new PointF(visitedpoints.OrderBy(v => v.p.X).First().p.X, visitedpoints.OrderBy(v => v.p.Y).First().p.Y);
+            //var bounds = new RectangleF(location, new SizeF(visitedpoints.OrderByDescending(v => v.p.X).First().p.X-location.X, visitedpoints.OrderByDescending(v => v.p.Y).First().p.Y-location.Y));
+
+            for (int i = 0; i < visitedpoints.Count; ++i)
             {
-                placementVectors.Add(new Vector(visitedpoints[i-1], visitedpoints[i]));
-            }
-
-            List<PointF> leftpoints = new List<PointF>();
-            List<PointF> rightpoints = new List<PointF>();
-
-
-            PointF location = new PointF(visitedpoints.OrderBy(v => v.X).First().X, visitedpoints.OrderBy(v => v.Y).First().Y);
-            var bounds = new RectangleF(location, new SizeF(visitedpoints.OrderByDescending(v => v.X).First().X-location.X, visitedpoints.OrderByDescending(v => v.Y).First().Y-location.Y));
-            
-            foreach (var vector in placementVectors)
-            {
-                FillVector(vector);
-                FillCircle(vector.A);
-                FillCircle(vector.B);
+                var point = visitedpoints[i];
+                FillCircle(point.p, point.radius);
+                if (i == 0)
+                {
+                    continue;
+                }
+                FillVector(new Vector(visitedpoints[i - 1].p, visitedpoints[i].p),point.radius);
             }
         }
 
-        private void FillCircle(PointF centre)
+        private void FillCircle(PointF centre, float radius)
         {
-            Circle_DetailArea corner = new Circle_DetailArea((int)((outer_radius/2)*(outer_radius/2)),(int)(outer_radius*2*outer_radius*2), 1, 1);
-            corner.Generate();
-            for (float x = centre.X - outer_radius*2; x < centre.X + outer_radius*2; ++x)
+            double nextradius = radius;
+
+            for (double degrees = 0; degrees < 360; degrees += (0.5))
             {
-                for (float y = centre.Y - outer_radius*2; y < centre.Y + outer_radius*2; ++y)
+                do
                 {
-                    double distance = new PointF(x, y).DistanceTo(centre);
-                    if (!corner.PointInside(new PointF(x, y)))
+                    double v = random.NextDouble();
+                    nextradius = (radius * 2) * (v - 0.25);
+                } while (nextradius < radius * 0.5 || nextradius > radius * 1.5);
+                
+                double angle = Circle_DetailArea.DegToRad(degrees); //TODO umm... dirty much?
+                
+                for (double radiuspoint = 0; radiuspoint <= nextradius; radiuspoint += 1)
+                {
+                    double x = radiuspoint * Math.Cos(angle) + centre.X; //Angle will stay the same
+                    double y = radiuspoint * Math.Sin(angle) + centre.Y;
+
+                    if (x < 0 || y < 0 || x > maxwidth || y > maxheight)
                     {
                         continue;
                     }
-                    //if (distance < inner_radius)
-                    //{
-                        //y=2x/(d+x)-1
-                        var height = 2*outer_radius/(distance+outer_radius)-1;
-                        if (height > 1)
-                        {
-                            height = 1;
-                        }
-                        if (heightmap[(int)x][(int)y] <= height)
-                        {
-                            heightmap[(int)x][(int)y] = (float)height;
-                        }
-                    //}
-                    //else
-                   // {
-                        //Should now scale down alot more
-                    //    var height = (outer_radius - distance) / outer_radius + 0.3f;
 
-                    //}
+                    var height = (((2 * nextradius) / (radiuspoint + nextradius)) - 1) * (0.5 + (random.NextDouble()/2));
+
+                    if (height > 1)
+                    {
+                        height = 1;
+                    }
+
+                    float oldheight = heightmap[(int)x][(int)y];
+                    if (oldheight == 0 || oldheight < height)
+                    {
+                        heightmap[(int)x][(int)y] = (float)height;
+                    }
                 }
             }
         }
         public void GenerateGradient(Graphics g)
         {
-            Generate();
-            //Smoothe with perlin noise
-            
+            //Smoothe with perlin noise            
             heightmap = PerlinNoise.GeneratePerlinNoise(heightmap, 5);
 
             for (int x = 0; x < maxwidth; ++x)
@@ -444,11 +449,9 @@ namespace TerrainGenerator
                 }
             }
         }
-        public void GenerateDetails(Graphics g, Biome data)
+        public void GenerateDetails(Graphics g, Biome data, Point offset)
         {
-            Generate();
             //Smoothe with perlin noise
-
             heightmap = PerlinNoise.GeneratePerlinNoise(heightmap, 5);
 
             for (int x = 0; x < maxwidth; ++x)
@@ -456,14 +459,14 @@ namespace TerrainGenerator
                 for (int y = 0; y < maxheight; ++y)
                 {
                     var height = heightmap[x][y];
+                    if (height < 0.05f)
+                    {
+                    //    height = 0.05f;
+                    }
                     for (int idx = 0; idx < data.colors.Count; idx++)
                     {
                         BiomeLayerData? color = data.colors[idx];
-                        if (height > 0.7)
-                        {
-
-                        }
-                        if (height > 0 && height <= color.upperbound)
+                        if (height <= color.upperbound && height > data.colors.OrderBy(b=>b.upperbound).First().upperbound)
                         {
                             var currentcolor = color.bitmap.SampleColor(x, y);
                             if (idx == 0) 
@@ -488,33 +491,29 @@ namespace TerrainGenerator
                                 currentcolor = currentcolor.Blend(lowercolor.SampleColor(x, y), amount);
                             }
 
-                            g.FillRectangle(new Pen(currentcolor).Brush, x, y, 1, 1);
+                            g.FillRectangle(new Pen(currentcolor).Brush, x+offset.X, y+offset.Y, 1, 1);
                             break;
                         }
                     }
-
-                //    if (heightmap[x][y] > 0)
-                //    {
-                //        var color = (int)(heightmap[x][y] * 255);
-                //        var pen = new Pen(Color.FromArgb(color, color, color));
-                //        g.FillRectangle(pen.Brush, x, y, 1, 1);
-                //    }
                 }
             }
         }
 
-        private void FillVector(Vector vector)
+        private void FillVector(Vector vector, float radius)
         {
             double start;
             double end;
             
             start = vector.A.X;
             end = vector.B.X;
-            
-            double change = start < end ? 0.1 : -0.1;
 
-            double nextradius = inner_radius;
-            double lastradius = inner_radius;
+            double change = start < end ? Math.Abs(vector.i/vector.j) : -Math.Abs(vector.i / vector.j);
+            if (change > 1)
+            {
+                change = 1;
+            }
+            double nextradius = radius;
+            double lastradius = radius;
             for (double x = start; start < end ? x <= end : x >= end; x += change)
             {
                 //Go left to right on the vector and add points for this vector
@@ -522,8 +521,8 @@ namespace TerrainGenerator
                 do
                 {
                     double v = random.NextDouble();
-                    nextradius = lastradius * (((v - 0.5) / 25) + 1); //Add some vibration to the startradius
-                } while (nextradius < inner_radius * 0.5 || nextradius > inner_radius * 1.5);
+                    nextradius = (radius*2) * (v-0.25);
+                } while (nextradius < radius * 0.5 || nextradius > radius * 1.5);
 
                 //Get the vector perpindicular to this vector
 
@@ -540,7 +539,7 @@ namespace TerrainGenerator
                 {
                     start2 = 0;
                 }
-                double change2 = start2 < end2 ? 0.1 : -0.1;
+                double change2 = start2 < end2 ? Math.Abs(vector.angle) / (Math.PI) : -Math.Abs(vector.angle) / (Math.PI);
 
                 Vector vector2 = new Vector(p_start, p_end);
 
@@ -548,20 +547,44 @@ namespace TerrainGenerator
                 {
                     //Add the depth of the vector to the mountain
                     var y2 = vector2.GetPoint(x2);
-                    // (radius-distance)/radius+0.3 is formula
-                    //var height = (nextradius - new PointF((float)x2, ) / nextradius + 0.3f;
+                    if (y2 < 0)
+                    {
+                        y2 = 0;
+                    }
+                    else if (y2 >= heightmap[0].Length)
+                    {
+                        y2 = heightmap[0].Length-1;
+                    }
+
+                    if (x2 < 0)
+                    {
+                        x2 = 0;
+                    }
+                    else if (x2 >= heightmap.Length)
+                    {
+                        break;
+                    }
+
+
                     var distance = new PointF((float)x2, (float)y2).DistanceTo(new PointF((float)x, (float)y));
-                    var height = 2 * nextradius / (distance + nextradius) - 1;
+                    var height = (((2 * nextradius) / (distance + nextradius)) - 1) * (0.5 + (random.NextDouble() / 2)); ;
 
                     if (height > 1)
                     {
                         height = 1;
                     }
 
-                    if (heightmap[(int)x2][(int)y2] <= height)
+                    float oldheight = heightmap[(int)x2][(int)y2];
+                    if (oldheight == 0 || oldheight < height)
                     {
                         heightmap[(int)x2][(int)y2] = (float)height;
                     }
+               //    else if(oldheight < height)
+               //    {
+               //        var total = (float)(oldheight + height)/2;
+               //        total = total >= 1 ? 1 : total;
+               //        heightmap[(int)x2][(int)y2] = total;
+               //    }
                 }
                 lastradius = nextradius;
             }

@@ -156,11 +156,12 @@ namespace TerrainGenerator
             //Circle_DetailArea detailArea = new Circle_DetailArea(30000,50000, 2, 1);
             //detailArea.location = new Point(Width/2, Height/2);
 
-            Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() {new Point(200,200), new Point(220,250), new Point(200,300), new Point(250, 320), new Point(400, 250), new Point(450, 270), new Point(500, 600) }, 100,100,Width, Height);
+            Direction_DetailArea detailArea = new Direction_DetailArea(new List<DetailAreaPoint>() {new DetailAreaPoint(300,200,50), new DetailAreaPoint(320,250,100), new DetailAreaPoint(300,300,200), new DetailAreaPoint(350, 320, 300), new DetailAreaPoint(400, 250,100), new DetailAreaPoint(450, 270,150), new DetailAreaPoint(500, 600,160) }, Width, Height);
             //Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() { new Point(100, 100), new Point(120, 150) },50,Width,Height);
             //detailArea.Generate();
+            detailArea.Generate();
+            detailArea.GenerateDetails(Graphics.FromImage(result), biomeChoosers[0].b, new Point(-100, -100));
             //detailArea.GenerateGradient(Graphics.FromImage(result));
-            detailArea.GenerateDetails(Graphics.FromImage(result), biomeChoosers[0].b);
             //Graphics.FromImage(result).FillPolygon(new Pen(Color.Green).Brush,detailArea.points.ToArray());
             Invalidate();
             return;

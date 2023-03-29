@@ -305,20 +305,6 @@ namespace TerrainGenerator
             return image;
         }
 
-        public static void DemoGradientMap()
-        {
-            int width = 256;
-            int height = 256;
-            int octaveCount = 8;
-
-            Color gradientStart = Color.FromArgb(255, 0, 0);
-            Color gradientEnd = Color.FromArgb(255, 0, 255);
-
-            float[][] perlinNoise = GeneratePerlinNoise(width, height, octaveCount);
-            Color[][] perlinImage = MapGradient(gradientStart, gradientEnd, perlinNoise);
-            SaveImage(perlinImage, "perlin_noise.png");
-        }
-
         public static float[][] AdjustLevels(float[][] image, float low, float high)
         {
             int width = image.Length;
