@@ -321,12 +321,30 @@ namespace TerrainGenerator
         {
             return deg * (Math.PI / 180);
         }
+        public bool PointInside(PointF testPoint) //Slow as absolute dogshit. like will literally take 14 fucking years
+        {
+            bool result = false;
+            int j = points.Count() - 1;
+            for (int i = 0; i < points.Count(); i++)
+            {
+                if (points[i].Y < testPoint.Y && points[j].Y >= testPoint.Y || points[j].Y < testPoint.Y && points[i].Y >= testPoint.Y)
+                {
+                    if (points[i].X + (testPoint.Y - points[i].Y) / (points[j].Y - points[i].Y) * (points[j].X - points[i].X) < testPoint.X)
+                    {
+                        result = !result;
+                    }
+                }
+                j = i;
+            }
+            return result;
+        }
     }
     public class Direction_DetailArea
     {
         public List<Point> visitedpoints;
 
-        public float radius;
+        public float inner_radius;
+        public float outer_radius;
         public List<PointF> points = new List<PointF>();
 
         public float[][] heightmap;
@@ -336,10 +354,12 @@ namespace TerrainGenerator
         private int maxwidth;
         private int maxheight;
 
-        public Direction_DetailArea(List<Point> visitedpoints, float radius, int maxwidth, int maxheight)
+        public Direction_DetailArea(List<Point> visitedpoints, float inner_radius, float outer_radius, int maxwidth, int maxheight)
         {
             this.visitedpoints = visitedpoints.Copy();
-            this.radius = radius;
+            this.inner_radius = inner_radius;
+            this.outer_radius = outer_radius;
+
             heightmap = PerlinNoise.GetEmptyArray<float>(maxwidth, maxheight);
             this.maxheight = maxheight;
             this.maxwidth = maxwidth;
@@ -360,28 +380,32 @@ namespace TerrainGenerator
 
             PointF location = new PointF(visitedpoints.OrderBy(v => v.X).First().X, visitedpoints.OrderBy(v => v.Y).First().Y);
             var bounds = new RectangleF(location, new SizeF(visitedpoints.OrderByDescending(v => v.X).First().X-location.X, visitedpoints.OrderByDescending(v => v.Y).First().Y-location.Y));
-            double lastradius = radius;
-            double nextradius = lastradius;
-
+            
             foreach (var vector in placementVectors)
             {
                 FillVector(vector);
-                FillCircle(vector.A, radius);
-                FillCircle(vector.B, radius);
+                FillCircle(vector.A);
+                FillCircle(vector.B);
             }
         }
 
-        private void FillCircle(PointF centre, float radius)
+        private void FillCircle(PointF centre)
         {
-            for (float x = centre.X - radius; x < centre.X + radius; ++x)
+            Circle_DetailArea corner = new Circle_DetailArea((int)((outer_radius/2)*(outer_radius/2)),(int)(outer_radius*2*outer_radius*2), 1, 1);
+            corner.Generate();
+            for (float x = centre.X - outer_radius*2; x < centre.X + outer_radius*2; ++x)
             {
-                for (float y = centre.Y - radius; y < centre.Y + radius; ++y)
+                for (float y = centre.Y - outer_radius*2; y < centre.Y + outer_radius*2; ++y)
                 {
                     double distance = new PointF(x, y).DistanceTo(centre);
-                    if (distance < radius)
+                    if (!corner.PointInside(new PointF(x, y)))
                     {
-                        // (radius-distance)/radius+0.3 is formula
-                        var height = (radius - distance) / radius + 0.3f;
+                        continue;
+                    }
+                    //if (distance < inner_radius)
+                    //{
+                        //y=2x/(d+x)-1
+                        var height = 2*outer_radius/(distance+outer_radius)-1;
                         if (height > 1)
                         {
                             height = 1;
@@ -390,7 +414,13 @@ namespace TerrainGenerator
                         {
                             heightmap[(int)x][(int)y] = (float)height;
                         }
-                    }
+                    //}
+                    //else
+                   // {
+                        //Should now scale down alot more
+                    //    var height = (outer_radius - distance) / outer_radius + 0.3f;
+
+                    //}
                 }
             }
         }
@@ -483,8 +513,8 @@ namespace TerrainGenerator
             
             double change = start < end ? 0.1 : -0.1;
 
-            double nextradius = radius;
-            double lastradius = radius;
+            double nextradius = inner_radius;
+            double lastradius = inner_radius;
             for (double x = start; start < end ? x <= end : x >= end; x += change)
             {
                 //Go left to right on the vector and add points for this vector
@@ -493,7 +523,7 @@ namespace TerrainGenerator
                 {
                     double v = random.NextDouble();
                     nextradius = lastradius * (((v - 0.5) / 25) + 1); //Add some vibration to the startradius
-                } while (nextradius < radius * 0.9 || nextradius > radius * 1.1);
+                } while (nextradius < inner_radius * 0.5 || nextradius > inner_radius * 1.5);
 
                 //Get the vector perpindicular to this vector
 
@@ -506,7 +536,10 @@ namespace TerrainGenerator
 
                 var start2 = x + scaled.i;
                 var end2   = x - scaled.i;
-
+                if (start2<0)
+                {
+                    start2 = 0;
+                }
                 double change2 = start2 < end2 ? 0.1 : -0.1;
 
                 Vector vector2 = new Vector(p_start, p_end);
@@ -516,7 +549,10 @@ namespace TerrainGenerator
                     //Add the depth of the vector to the mountain
                     var y2 = vector2.GetPoint(x2);
                     // (radius-distance)/radius+0.3 is formula
-                    var height = (nextradius - new PointF((float)x2, (float)y2).DistanceTo(new PointF((float)x, (float)y))) / nextradius + 0.3f;
+                    //var height = (nextradius - new PointF((float)x2, ) / nextradius + 0.3f;
+                    var distance = new PointF((float)x2, (float)y2).DistanceTo(new PointF((float)x, (float)y));
+                    var height = 2 * nextradius / (distance + nextradius) - 1;
+
                     if (height > 1)
                     {
                         height = 1;
