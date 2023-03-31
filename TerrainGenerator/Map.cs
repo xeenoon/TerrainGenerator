@@ -13,6 +13,7 @@ using System.Windows.Media.TextFormatting;
 using Microsoft.VisualBasic.ApplicationServices;
 using System.Numerics;
 using System.Runtime.Intrinsics;
+using System.Diagnostics;
 
 namespace TerrainGenerator
 {
@@ -451,52 +452,73 @@ namespace TerrainGenerator
         }
         public void GenerateDetails(Graphics g, Biome data, Point offset)
         {
-            //Smoothe with perlin noise
-            heightmap = PerlinNoise.GeneratePerlinNoise(heightmap, 5);
-
-            for (int x = 0; x < maxwidth; ++x)
+            Bitmap bitmap = new Bitmap(maxwidth, maxheight);
+            using (BMP result = new BMP(bitmap))
             {
-                for (int y = 0; y < maxheight; ++y)
+                string debugresults = "";
+                Stopwatch sw = Stopwatch.StartNew();
+                sw.Start();
+                Generate();
+                sw.Stop();
+                debugresults += "Generate miliseconds: " + sw.ElapsedMilliseconds + "\n";
+
+                sw.Restart();
+                //Smoothe with perlin noise
+                heightmap = PerlinNoise.GeneratePerlinNoise(heightmap, 5);
+                sw.Stop();
+                debugresults += "Noise miliseconds: " + sw.ElapsedMilliseconds + "\n";
+
+                sw.Restart();
+                for (int x = offset.X; x < maxwidth; ++x)
                 {
-                    var height = heightmap[x][y];
-                    if (height < 0.05f)
+                    for (int y = offset.Y; y < maxheight; ++y)
                     {
-                    //    height = 0.05f;
-                    }
-                    for (int idx = 0; idx < data.colors.Count; idx++)
-                    {
-                        BiomeLayerData? color = data.colors[idx];
-                        if (height <= color.upperbound && height > data.colors.OrderBy(b=>b.upperbound).First().upperbound)
+                        var height = heightmap[x][y];
+                        if (height < data.colors.OrderBy(b => b.upperbound).First().upperbound)
                         {
-                            var currentcolor = color.bitmap.SampleColor(x, y);
-                            if (idx == 0) 
+                            continue;
+                        }
+                        for (int idx = 0; idx < data.colors.Count; idx++)
+                        {
+                            BiomeLayerData? color = data.colors[idx];
+                            if (height <= color.upperbound)
                             {
-                                //Dont do any blending
-                                g.FillRectangle(new Pen(currentcolor).Brush, x, y, 1, 1);
+                                var currentcolor = color.bitmap.SampleColor(x, y);
+                                if (idx == 0)
+                                {
+                                    //Dont do any blending
+                                    g.FillRectangle(new Pen(currentcolor).Brush, x, y, 1, 1);
+                                    break;
+                                }
+                                float upperbound = color.upperbound;
+                                float lowerbound = data.colors[idx - 1].upperbound;
+                                float size = upperbound - lowerbound;
+
+                                float above_space = upperbound - height;
+
+                                if (above_space < (size))
+                                {
+                                    //We are in the lower quartile, so adjust the color towards the lower color
+                                    var lowercolor = data.colors[idx - 1].bitmap;
+
+                                    //The closer we are to the lower color, the more we should blend
+                                    float amount = (above_space) / (2 * size);
+                                    currentcolor = currentcolor.Blend(lowercolor.SampleColor(x, y), amount);
+                                }
+
+                                result.SetPixel(x + offset.X, y + offset.Y, currentcolor);
+                                //g.FillRectangle(new Pen(currentcolor).Brush, x+offset.X, y+offset.Y, 1, 1);
                                 break;
                             }
-                            float upperbound = color.upperbound;
-                            float lowerbound = data.colors[idx - 1].upperbound;
-                            float size = upperbound - lowerbound;
-
-                            float above_space = upperbound - height;
-
-                            if (above_space < (size))
-                            {
-                                //We are in the lower quartile, so adjust the color towards the lower color
-                                var lowercolor = data.colors[idx - 1].bitmap;
-
-                                //The closer we are to the lower color, the more we should blend
-                                float amount = (above_space) / (2 * size);
-                                currentcolor = currentcolor.Blend(lowercolor.SampleColor(x, y), amount);
-                            }
-
-                            g.FillRectangle(new Pen(currentcolor).Brush, x+offset.X, y+offset.Y, 1, 1);
-                            break;
                         }
                     }
                 }
+                sw.Stop();
+                debugresults += "Draw miliseconds: " + sw.ElapsedMilliseconds;
+
+                MessageBox.Show(debugresults);
             }
+            g.DrawImage(bitmap,new Point(0,0));
         }
 
         private void FillVector(Vector vector, float radius)
