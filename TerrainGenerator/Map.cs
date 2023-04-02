@@ -586,6 +586,10 @@ namespace TerrainGenerator
                     {
                         break;
                     }
+                    if (double.IsNaN(y2)) //Divide by zero error
+                    {
+                        break;
+                    }
 
 
                     var distance = new PointF((float)x2, (float)y2).DistanceTo(new PointF((float)x, (float)y));

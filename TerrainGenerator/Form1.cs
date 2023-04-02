@@ -156,7 +156,15 @@ namespace TerrainGenerator
             //Circle_DetailArea detailArea = new Circle_DetailArea(30000,50000, 2, 1);
             //detailArea.location = new Point(Width/2, Height/2);
 
-            Direction_DetailArea detailArea = new Direction_DetailArea(new List<DetailAreaPoint>() {new DetailAreaPoint(300,200,50), new DetailAreaPoint(320,250,100), new DetailAreaPoint(300,300,200), new DetailAreaPoint(350, 320, 300), new DetailAreaPoint(400, 250,100), new DetailAreaPoint(450, 270,150), new DetailAreaPoint(500, 600,160) }, Width, Height);
+            //Direction_DetailArea detailArea = new Direction_DetailArea(new List<DetailAreaPoint>() {new DetailAreaPoint(300,200,50), new DetailAreaPoint(320,250,100), new DetailAreaPoint(300,300,200), new DetailAreaPoint(350, 320, 300), new DetailAreaPoint(400, 250,100), new DetailAreaPoint(450, 270,150), new DetailAreaPoint(500, 600,160) }, Width, Height);
+            Direction_DetailArea detailArea = new Direction_DetailArea(new List<DetailAreaPoint>() {
+                new DetailAreaPoint(200,400,100),
+                new DetailAreaPoint(250,350,100),
+                new DetailAreaPoint(300,340,150),
+                new DetailAreaPoint(420,300,150),
+                new DetailAreaPoint(450,320,250),
+                new DetailAreaPoint(400,370,150),
+                new DetailAreaPoint(350,200,150),}, Width, Height);
             //Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() { new Point(100, 100), new Point(120, 150) },50,Width,Height);
             //detailArea.Generate();
             //detailArea.Generate();
