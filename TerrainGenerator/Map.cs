@@ -366,7 +366,18 @@ namespace TerrainGenerator
 
         private int maxwidth;
         private int maxheight;
-
+   //     public List<DetailAreaPoint> GeneratePoints(Rectangle bounds)
+   //     {
+   //         int amount = random.Next(5,7);
+   //         //We want to try and fill the rectangle
+   //         //Place the first point near the edge, start on the LHS TOP
+   //
+   //         Point start = bounds.Location;
+   //         var additive_y = random.Next(5, bounds.Height - 5);
+   //         var additive_x = random.Next(5, bounds.Height/amount); //Dont start too far to the right otherwise there wont be space for more points
+   //
+   //         
+   //     }
         public Direction_DetailArea(List<DetailAreaPoint> visitedpoints, int maxwidth, int maxheight)
         {
             this.visitedpoints = visitedpoints.Copy();
@@ -487,7 +498,7 @@ namespace TerrainGenerator
                                 if (idx == 0)
                                 {
                                     //Dont do any blending
-                                    g.FillRectangle(new Pen(currentcolor).Brush, x, y, 1, 1);
+                                    result.SetPixel(x + offset.X, y + offset.Y, currentcolor);
                                     break;
                                 }
                                 float upperbound = color.upperbound;

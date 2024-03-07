@@ -157,18 +157,39 @@ namespace TerrainGenerator
             //detailArea.location = new Point(Width/2, Height/2);
 
             //Direction_DetailArea detailArea = new Direction_DetailArea(new List<DetailAreaPoint>() {new DetailAreaPoint(300,200,50), new DetailAreaPoint(320,250,100), new DetailAreaPoint(300,300,200), new DetailAreaPoint(350, 320, 300), new DetailAreaPoint(400, 250,100), new DetailAreaPoint(450, 270,150), new DetailAreaPoint(500, 600,160) }, Width, Height);
+            Direction_DetailArea detailArea2 = new Direction_DetailArea(new List<DetailAreaPoint>() {
+                new DetailAreaPoint(600,500,100),
+                new DetailAreaPoint(650,450,100),
+                new DetailAreaPoint(700,440,150),
+                new DetailAreaPoint(820,400,150),
+                new DetailAreaPoint(850,420,250),
+                new DetailAreaPoint(700,600,200),}, Width, Height);
+
             Direction_DetailArea detailArea = new Direction_DetailArea(new List<DetailAreaPoint>() {
-                new DetailAreaPoint(200,400,100),
-                new DetailAreaPoint(250,350,100),
+              //  new DetailAreaPoint(200,400,100),
+              //  new DetailAreaPoint(250,350,100),
                 new DetailAreaPoint(300,340,150),
                 new DetailAreaPoint(420,300,150),
                 new DetailAreaPoint(450,320,250),
                 new DetailAreaPoint(400,370,150),
-                new DetailAreaPoint(350,200,150),}, Width, Height);
+                new DetailAreaPoint(350,200,150),
+                new DetailAreaPoint(400,400,150),
+                new DetailAreaPoint(350,500,150),
+                new DetailAreaPoint(200,600,150),}, Width, Height);
+
+           Direction_DetailArea detailArea3 = new Direction_DetailArea(new List<DetailAreaPoint>() {
+               new DetailAreaPoint(300,200,100),
+               new DetailAreaPoint(450,150,100),
+               new DetailAreaPoint(550,210,150),
+               new DetailAreaPoint(650,200,70),}, Width, Height);
+     
+
             //Direction_DetailArea detailArea = new Direction_DetailArea(new List<Point>() { new Point(100, 100), new Point(120, 150) },50,Width,Height);
             //detailArea.Generate();
             //detailArea.Generate();
-            detailArea.GenerateDetails(Graphics.FromImage(result), biomeChoosers[0].b, new Point(0,0));
+            detailArea.GenerateDetails(Graphics.FromImage(result), biomeChoosers[0].b, new Point(0, 0));
+            detailArea2.GenerateDetails(Graphics.FromImage(result), biomeChoosers[0].b, new Point(0, 0));
+            detailArea3.GenerateDetails(Graphics.FromImage(result), biomeChoosers[0].b, new Point(0, 0));
             //detailArea.GenerateGradient(Graphics.FromImage(result));
             //Graphics.FromImage(result).FillPolygon(new Pen(Color.Green).Brush,detailArea.points.ToArray());
             Invalidate();
