@@ -474,6 +474,12 @@ namespace TerrainGenerator
         {
             if (result != null)
             {
+                if (e.Button == MouseButtons.Right)
+                {
+                    position = new Point(0,0);
+                    return;
+                }
+
                 if (!stableposition.Contains(e.Location))
                 {
                     velocity.X = ((Width / 2) - e.Location.X) / 40;
